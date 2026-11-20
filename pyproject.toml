@@ -76,7 +76,7 @@ select = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["-ra", "--strict-markers"]
+addopts = ["-ra", "--strict-markers", "-m", "not slow"]
 markers = [
-    "slow: runs real models (Whisper, translation); deselect with -m 'not slow'",
+    "slow: runs real models (Whisper, translation); skipped by default, run with -m slow",
 ]

@@ -72,7 +72,7 @@ pytest
 python -m telsiz --help
 ```
 
-Gerçek modelle çalışan yavaş testler `@pytest.mark.slow` ile işaretlidir. Bunları atlamak için `pytest -m "not slow"` kullanabilirsin.
+Gerçek modelle çalışan yavaş testler `@pytest.mark.slow` ile işaretlidir ve varsayılan olarak atlanır. Çalıştırmak için önce `pip install -e ".[all,dev]"`, sonra `pytest -m slow` kullan; ilk çalıştırma modelleri indirir.
 
 ### Lisans
 
@@ -152,7 +152,7 @@ pytest
 python -m telsiz --help
 ```
 
-Slow tests that run real models are marked with `@pytest.mark.slow`. You can skip them with `pytest -m "not slow"`.
+Slow tests that run real models are marked with `@pytest.mark.slow` and are skipped by default. To run them, first `pip install -e ".[all,dev]"`, then use `pytest -m slow`; the first run downloads the models.
 
 ### License
 

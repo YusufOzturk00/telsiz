@@ -1,0 +1,157 @@
+# English -> Turkish translation check, written for this project (MIT).
+# Categories:
+#   clean  - fluent callouts
+#   broken - typical non-native grammar (missing articles/verbs, wrong tense)
+#   slang  - gamer abbreviations and slang
+#   casual - everyday team talk
+# "tr" is a natural Turkish reference translation; game terms stay as players say them.
+
+[[phrases]]
+category = "clean"
+en = "They're rushing B, five of them."
+tr = "B'ye rush atıyorlar, beşi birden."
+
+[[phrases]]
+category = "clean"
+en = "One is in A long, he has an AWP."
+tr = "Biri A long'da, elinde AWP var."
+
+[[phrases]]
+category = "clean"
+en = "Save your weapon, we can't win this round."
+tr = "Silahını kurtar, bu raundu kazanamayız."
+
+[[phrases]]
+category = "clean"
+en = "I'm low, one shot."
+tr = "Canım az, tek mermilik canım kaldı."
+
+[[phrases]]
+category = "clean"
+en = "Let's eco this round and full buy next."
+tr = "Bu raunt eco yapalım, sonrakinde full alalım."
+
+[[phrases]]
+category = "clean"
+en = "Smoke CT and flash for me."
+tr = "CT'ye smoke at, bana da flash at."
+
+[[phrases]]
+category = "clean"
+en = "The bomb is planted on A, go retake."
+tr = "Bomba A'ya kuruldu, gidip geri alın."
+
+[[phrases]]
+category = "clean"
+en = "Watch mid, someone is lurking."
+tr = "Orta'ya dikkat et, biri pusuda bekliyor."
+
+[[phrases]]
+category = "clean"
+en = "Nice try, guys. We'll get the next one."
+tr = "İyi denemeydi arkadaşlar. Sonrakini alırız."
+
+[[phrases]]
+category = "clean"
+en = "Don't peek, wait for the flash."
+tr = "Kafa çıkarma, flash'ı bekle."
+
+[[phrases]]
+category = "broken"
+en = "he going B, I no have money"
+tr = "B'ye gidiyor, param yok."
+
+[[phrases]]
+category = "broken"
+en = "why you not drop me weapon"
+tr = "Neden bana silah atmıyorsun?"
+
+[[phrases]]
+category = "broken"
+en = "they is three on A, careful"
+tr = "A'da üç kişiler, dikkat et."
+
+[[phrases]]
+category = "broken"
+en = "I am die, sorry, he was behind of box"
+tr = "Öldüm, kusura bakma, kutunun arkasındaydı."
+
+[[phrases]]
+category = "broken"
+en = "please you buy armor, not only gun"
+tr = "Lütfen zırh al, sadece silah değil."
+
+[[phrases]]
+category = "broken"
+en = "where is bomb? who have bomb?"
+tr = "Bomba nerede? Bomba kimde?"
+
+[[phrases]]
+category = "broken"
+en = "me go A, you go B, okay?"
+tr = "Ben A'ya gidiyorum, sen B'ye git, tamam mı?"
+
+[[phrases]]
+category = "broken"
+en = "enemy very fast, he run to connector"
+tr = "Düşman çok hızlı, connector'a koştu."
+
+[[phrases]]
+category = "broken"
+en = "stop shoot me, I am your team"
+tr = "Bana ateş etmeyi kes, ben senin takımındanım."
+
+[[phrases]]
+category = "broken"
+en = "last round we lose because nobody defuse"
+tr = "Son raundu kimse bombayı imha etmediği için kaybettik."
+
+[[phrases]]
+category = "slang"
+en = "nt nt, ez next round"
+tr = "İyi denemeydi, sonraki raunt kolay."
+
+[[phrases]]
+category = "slang"
+en = "gg wp, they're just better"
+tr = "İyi oyundu, onlar daha iyi."
+
+[[phrases]]
+category = "slang"
+en = "bro he's lit, like 20 hp"
+tr = "Kanka adamın canı az, 20 can falan."
+
+[[phrases]]
+category = "slang"
+en = "ninja defuse, go go go"
+tr = "Gizlice imha et, hadi hadi hadi."
+
+[[phrases]]
+category = "slang"
+en = "he's baiting, don't swing"
+tr = "Seni yemliyor, açılma."
+
+[[phrases]]
+category = "slang"
+en = "rotate rotate, they faked A"
+tr = "Dönün dönün, A'ya fake attılar."
+
+[[phrases]]
+category = "slang"
+en = "my bad, I whiffed"
+tr = "Benim hatam, ıskaladım."
+
+[[phrases]]
+category = "casual"
+en = "one more round and we win the half"
+tr = "Bir raunt daha alırsak devreyi kazanırız."
+
+[[phrases]]
+category = "casual"
+en = "guys mute that guy, he is crying all game"
+tr = "Arkadaşlar şu adamı susturun, bütün oyun ağlıyor."
+
+[[phrases]]
+category = "casual"
+en = "can someone drop me AK please"
+tr = "Biri bana AK atabilir mi lütfen?"
