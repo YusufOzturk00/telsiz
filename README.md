@@ -24,7 +24,16 @@ Telsiz yalnızca sesli sohbetle ilgilenir; yazılı sohbeti çevirmez.
 
 ### Durum
 
-🚧 **Erken geliştirme aşamasında.** Şu an yalnızca proje iskeleti hazır (M0). Çeviri hattı henüz yok; kullanılabilir bir sürüm yayınlandığında kurulum adımları burada olacak.
+🚧 **Erken geliştirme aşamasında.** Şu an bir ses dosyasındaki konuşmayı tespit edip Türkçeye çevirebiliyor (M1). Canlı oyun sesi, overlay ve telefon modu henüz yok; kullanılabilir bir sürüm yayınlandığında kurulum adımları burada olacak.
+
+Geliştiriciler dosyadan çeviriyi şöyle deneyebilir (ilk çalıştırma modelleri indirir):
+
+```powershell
+pip install -e ".[all]"
+python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr
+```
+
+Ölçüm raporları [docs/eval](docs/eval) klasöründe.
 
 ### Neden güvenli?
 
@@ -104,7 +113,16 @@ Telsiz only deals with voice chat; it does not translate text chat.
 
 ### Status
 
-🚧 **In early development.** Only the project skeleton is ready right now (M0). The translation pipeline does not exist yet; installation steps will be here once a usable release is published.
+🚧 **In early development.** Right now it can detect speech in an audio file and translate it into Turkish (M1). Live game audio, the overlay and phone mode do not exist yet; installation steps will be here once a usable release is published.
+
+Developers can try file translation like this (the first run downloads the models):
+
+```powershell
+pip install -e ".[all]"
+python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr
+```
+
+Measurement reports are in the [docs/eval](docs/eval) folder.
 
 ### Why is this safe?
 
