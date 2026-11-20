@@ -1,1 +1,194 @@
-body { background: #111; color: #fff; }
+/* Telsiz subtitle screen: night-blue base, two-way-radio amber for channels and signal. */
+
+:root {
+  --night: #142230;
+  --panel: #1b2e3f;
+  --line: #2a4256;
+  --amber: #ffb000;
+  --amber-dim: #8a6512;
+  --text: #f3eee2;
+  --muted: #8fa3b5;
+  --alert: #ff6b5b;
+
+  --font: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Roboto", sans-serif;
+  --scale: 1;               /* changed by the A−/A+ buttons */
+  --latest: calc(2.25rem * var(--scale));
+  --older: calc(1.35rem * var(--scale));
+  --gutter: clamp(16px, 4vw, 40px);
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--night);
+  color: var(--text);
+  font-family: var(--font);
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- top bar ---------------------------------------------------------------- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px var(--gutter);
+  padding-top: max(10px, env(safe-area-inset-top));
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.brand {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.signal { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--muted); }
+.bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.bars i { display: block; width: 4px; background: var(--line); border-radius: 1px; }
+.bars i:nth-child(1) { height: 5px; }
+.bars i:nth-child(2) { height: 9px; }
+.bars i:nth-child(3) { height: 14px; }
+.signal[data-state="live"] .bars i { background: var(--amber); }
+.signal[data-state="connecting"] .bars i:nth-child(1) { background: var(--amber-dim); }
+.signal[data-state="lost"] .bars i:nth-child(1) { background: var(--alert); }
+.signal[data-state="lost"] .signal-text { color: var(--alert); }
+
+.controls { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+
+.ctl {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-height: 36px;
+  cursor: pointer;
+}
+.ctl:hover { border-color: var(--muted); }
+.ctl:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.ctl[aria-pressed="false"] { color: var(--muted); }
+.ctl-phone { border-color: var(--amber-dim); }
+
+/* --- feed: newest line at the bottom, like subtitles ----------------------------- */
+
+.feed {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-y: auto;
+  padding: 24px var(--gutter);
+  padding-bottom: max(28px, env(safe-area-inset-bottom));
+}
+
+/* Push lines to the bottom without flex-end, which would make overflow unscrollable. */
+.feed > :first-child { margin-top: auto; }
+
+.empty {
+  margin-bottom: auto;
+  max-width: 34ch;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.msg {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 14px;
+  align-items: baseline;
+  opacity: 0.55;
+  transition: opacity 0.4s;
+}
+.msg:last-child { opacity: 1; }
+
+.channel {
+  grid-row: span 2;
+  align-self: start;
+  margin-top: 0.3em;
+  min-width: 2.6em;
+  padding: 2px 6px;
+  border: 1px solid var(--amber-dim);
+  border-radius: 4px;
+  color: var(--amber);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.said {
+  margin: 0;
+  max-width: 40ch;  /* measured in the line's own size, so the big line stays readable */
+  font-size: var(--older);
+  font-weight: 500;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.msg:last-child .said { font-size: var(--latest); font-weight: 650; line-height: 1.2; }
+
+.orig {
+  margin: 4px 0 0;
+  max-width: 70ch;
+  font-size: calc(0.95rem * var(--scale));
+  line-height: 1.4;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.orig .note { color: var(--amber-dim); }
+body.hide-original .orig { display: none; }
+
+.meta { color: var(--muted); opacity: 0.7; font-size: 0.8rem; margin-left: 8px; white-space: nowrap; }
+
+/* The one moment of motion: a new transmission flashes in amber. */
+.msg.is-new .channel { animation: key-up 0.9s ease-out; }
+.msg.is-new .said { animation: arrive 0.5s ease-out; }
+@keyframes key-up {
+  from { background: var(--amber); color: var(--night); }
+  to { background: transparent; color: var(--amber); }
+}
+@keyframes arrive {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .msg.is-new .channel, .msg.is-new .said { animation: none; }
+  .msg { transition: none; }
+}
+
+/* --- phone pairing dialog ------------------------------------------------------------ */
+
+.pair {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 24px;
+  max-width: min(360px, calc(100vw - 32px));
+}
+.pair::backdrop { background: rgba(10, 18, 26, 0.75); }
+.pair h2 { margin: 0 0 8px; font-size: 1.2rem; }
+.pair p { margin: 0 0 12px; color: var(--muted); line-height: 1.45; }
+.pair img { display: block; width: 100%; height: auto; background: #fff; border-radius: 6px; padding: 8px; }
+.pair-url { margin-top: 12px; font-size: 0.8rem; overflow-wrap: anywhere; color: var(--text); }
+.pair-note { font-size: 0.85rem; }
+
+/* --- small screens (phone) --------------------------------------------------------- */
+
+@media (max-width: 560px) {
+  :root { --latest: calc(1.7rem * var(--scale)); --older: calc(1.1rem * var(--scale)); }
+  .brand { display: none; }
+  .bar { gap: 10px; }
+  .meta { display: none; }
+}

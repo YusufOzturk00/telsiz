@@ -1,2 +1,41 @@
 <!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><title>Telsiz</title><link rel="stylesheet" href="/static/style.css"></head><body><main id="feed"></main><script src="/static/app.js"></script></body></html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#142230">
+  <title>Telsiz</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="bar">
+    <div class="signal" id="signal" data-state="connecting" role="status">
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="signal-text" id="signal-text">Bağlanıyor</span>
+    </div>
+    <h1 class="brand">Telsiz</h1>
+    <div class="controls">
+      <button type="button" class="ctl" id="smaller" aria-label="Yazıyı küçült">A−</button>
+      <button type="button" class="ctl" id="bigger" aria-label="Yazıyı büyüt">A+</button>
+      <button type="button" class="ctl" id="toggle-original" aria-pressed="true">Orijinal</button>
+      <button type="button" class="ctl ctl-phone" id="open-phone" hidden>Telefonda aç</button>
+    </div>
+  </header>
+
+  <main class="feed" id="feed" aria-live="polite" aria-relevant="additions">
+    <p class="empty" id="empty">Takım arkadaşların konuştuğunda çeviriler burada görünecek.</p>
+  </main>
+
+  <dialog class="pair" id="pair">
+    <h2>Telefonda aç</h2>
+    <p>Telefon bu bilgisayarla aynı Wi‑Fi ağında olmalı. Kamerayla kodu okut.</p>
+    <img id="pair-qr" alt="Telefon bağlantısı için QR kod" width="240" height="240">
+    <p class="pair-url" id="pair-url"></p>
+    <p class="pair-note">Bağlantıda bu oturuma özel bir erişim anahtarı var; kimseyle paylaşma.</p>
+    <form method="dialog"><button class="ctl" type="submit">Kapat</button></form>
+  </dialog>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
