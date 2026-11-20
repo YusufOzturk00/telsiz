@@ -31,11 +31,14 @@ dependencies = [
 [project.optional-dependencies]
 # Speech recognition (faster-whisper, MIT). Also ships the Silero VAD ONNX model.
 whisper = ["faster-whisper>=1.1"]
-# Argos Translate models run directly on CTranslate2 (MIT) + SentencePiece (Apache-2.0).
+# Argos Translate models run directly on CTranslate2 (MIT) with SentencePiece (Apache-2.0)
+# or Moses + BPE tokenization (sacremoses, subword-nmt; both MIT).
 # The argostranslate package itself is not used: it depends on minisbd (AGPL-3.0).
 argos = [
     "ctranslate2>=4.0,<5",
     "sentencepiece>=0.2",
+    "sacremoses>=0.1",
+    "subword-nmt>=0.3.8",
 ]
 # NVIDIA CUDA 12 runtime libraries for GPU inference (optional).
 gpu = [

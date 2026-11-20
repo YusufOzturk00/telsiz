@@ -62,3 +62,18 @@ def test_clip_is_detected_transcribed_and_translated(clip, recognizer, translato
     assert translated.strip()
     assert translated != original
     assert not CYRILLIC.search(translated)
+
+
+def test_ukrainian_text_is_translated_through_english():
+    """uk->en 1.9 is a Moses+BPE package; it pivots through English to Turkish."""
+    pytest.importorskip("ctranslate2")
+    pytest.importorskip("sacremoses")
+    from telsiz.translate.argos import create_argos_translator
+
+    engine = create_argos_translator()
+
+    assert engine.route("uk", "tr") == [("uk", "en"), ("en", "tr")]
+    turkish = engine.translate("Вони йдуть на Б, їх троє.", "uk", "tr")
+
+    assert turkish.strip()
+    assert not CYRILLIC.search(turkish)

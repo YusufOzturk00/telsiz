@@ -1,9 +1,9 @@
 """Local translation with Argos Translate models.
 
 Argos model packages (``.argosmodel``) are zip files holding a CTranslate2
-model and a SentencePiece tokenizer. We run them directly with
-``ctranslate2`` (MIT) and ``sentencepiece`` (Apache-2.0) instead of using the
-``argostranslate`` package, which depends on ``minisbd`` (AGPL-3.0) and pulls
+model and a SentencePiece or BPE tokenizer. We run them directly with
+``ctranslate2`` (MIT) and the tokenizers in :mod:`telsiz.translate.tokenizers`
+instead of using the ``argostranslate`` package, which depends on ``minisbd`` (AGPL-3.0) and pulls
 in torch, spaCy and Stanza.
 
 Languages without a direct model are translated through English.
@@ -23,6 +23,7 @@ from typing import Protocol
 
 from telsiz.paths import models_dir
 from telsiz.translate.base import TranslationUnavailable
+from telsiz.translate.tokenizers import load_tokenizer
 
 log = logging.getLogger(__name__)
 
@@ -47,20 +48,16 @@ class ArgosModel:
 
     def __init__(self, path: Path, device: str = "cpu") -> None:
         import ctranslate2
-        import sentencepiece
 
         metadata = json.loads((path / "metadata.json").read_text(encoding="utf-8"))
-        tokenizer = path / "sentencepiece.model"
-        if not tokenizer.is_file():
-            raise TranslationUnavailable(f"{path.name}: only SentencePiece packages are supported")
         self._target_prefix: str | None = metadata.get("target_prefix") or None
-        self._sp = sentencepiece.SentencePieceProcessor(model_file=str(tokenizer))
+        self._tokenizer = load_tokenizer(path, metadata["from_code"], metadata["to_code"])
         self._translator = ctranslate2.Translator(str(path / "model"), device=device)
 
     def translate(self, sentences: Sequence[str]) -> list[str]:
         if not sentences:
             return []
-        tokens = [self._sp.encode(s, out_type=str) for s in sentences]
+        tokens = [self._tokenizer.encode(s) for s in sentences]
         prefix = [[self._target_prefix]] * len(tokens) if self._target_prefix else None
         results = self._translator.translate_batch(
             tokens,
@@ -75,7 +72,7 @@ class ArgosModel:
             hypothesis = result.hypotheses[0]
             if prefix:
                 hypothesis = hypothesis[1:]
-            out.append(self._sp.decode(hypothesis).strip())
+            out.append(self._tokenizer.decode(hypothesis))
         return out
 
 
