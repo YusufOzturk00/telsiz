@@ -30,6 +30,24 @@ Pair = tuple[str, str]
 class Protected:
     text: str  # what the translator sees
     replacements: list[str] = field(default_factory=list)  # value for ZX1, ZX2, ...
+    capitalize: bool = False  # the source sentence started with a capital letter
+    target: str = ""
+
+
+def _upper_first(text: str, language: str) -> str:
+    if not text or not text[0].islower():
+        return text
+    first = text[0]
+    if language in ("tr", "az"):
+        first = {"i": "İ", "ı": "I"}.get(first, first.upper())
+    else:
+        first = first.upper()
+    return first + text[1:]
+
+
+def _starts_upper(text: str) -> bool:
+    letters = [c for c in text if c.isalpha()]
+    return bool(letters) and letters[0].isupper()
 
 
 def _term_regex(term: str, exact: bool) -> str:
@@ -76,6 +94,7 @@ class Glossary:
         return re.sub(pattern, lambda m: lookup[m.group(0).lower()], text)
 
     def protect(self, text: str, source: str, target: str) -> Protected:
+        capitalize = _starts_upper(text)
         text = self._expand(text, source)
 
         exact: dict[str, str] = {_norm(t): t for t in self.keep_exact}
@@ -85,7 +104,7 @@ class Glossary:
         )
         entries = [(t, True) for t in exact] + [(t, False) for t in loose]
         if not entries:
-            return Protected(text)
+            return Protected(text, capitalize=capitalize, target=target)
         entries.sort(key=lambda e: len(e[0]), reverse=True)
         pattern = re.compile("|".join(_term_regex(term, is_exact) for term, is_exact in entries))
 
@@ -97,7 +116,7 @@ class Glossary:
             replacements.append(value)
             return f"ZX{len(replacements)}"
 
-        return Protected(pattern.sub(swap, text), replacements)
+        return Protected(pattern.sub(swap, text), replacements, capitalize, target)
 
     def restore(self, protected: Protected, translated: str) -> str:
         values = protected.replacements
@@ -106,7 +125,10 @@ class Glossary:
             index = int(match.group(1)) - 1
             return values[index] if 0 <= index < len(values) else match.group(0)
 
-        return _PLACEHOLDER.sub(back, translated) if values else translated
+        if not values:
+            return translated
+        restored = _PLACEHOLDER.sub(back, translated)
+        return _upper_first(restored, protected.target) if protected.capitalize else restored
 
 
 def default_glossary_path() -> Path:

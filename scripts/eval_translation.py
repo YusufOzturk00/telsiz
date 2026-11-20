@@ -1,6 +1,6 @@
 """Translate the phrase set and print a Markdown quality report.
 
-    python scripts/eval_translation.py [--phrases data/eval/en_tr_phrases.toml] [--out report.md]
+    python scripts/eval_translation.py [--phrases FILE] [--no-glossary] [--out report.md]
 
 Needs the ``argos`` extra; downloads the required Argos models on first run.
 """
@@ -14,6 +14,7 @@ import tomllib
 from collections import defaultdict
 from pathlib import Path
 
+from telsiz.glossary import Glossary, default_glossary_path
 from telsiz.quality.metrics import chrf, corpus_chrf
 from telsiz.translate.argos import create_argos_translator
 
@@ -30,7 +31,9 @@ def main() -> int:
     parser.add_argument("--source", default="en")
     parser.add_argument("--target", default="tr")
     parser.add_argument("--out", type=Path, help="also write the report to this file")
+    parser.add_argument("--no-glossary", action="store_true", help="translate without the glossary")
     args = parser.parse_args()
+    glossary = None if args.no_glossary else Glossary.load(default_glossary_path())
 
     phrases = tomllib.loads(args.phrases.read_text(encoding="utf-8"))["phrases"]
     translator = create_argos_translator()
@@ -39,7 +42,13 @@ def main() -> int:
     rows = []
     started = time.perf_counter()
     for item in phrases:
-        hypothesis = translator.translate(item[args.source], args.source, args.target)
+        text = item[args.source]
+        if glossary is None:
+            hypothesis = translator.translate(text, args.source, args.target)
+        else:
+            protected = glossary.protect(text, args.source, args.target)
+            translated = translator.translate(protected.text, args.source, args.target)
+            hypothesis = glossary.restore(protected, translated)
         rows.append((item["category"], item[args.source], hypothesis, item[args.target]))
     elapsed_ms = (time.perf_counter() - started) * 1000 / max(len(rows), 1)
 
@@ -48,7 +57,8 @@ def main() -> int:
         by_category[category].append((hypothesis, reference))
 
     lines = [
-        f"# Translation check: {args.source} -> {args.target} (Argos)",
+        f"# Translation check: {args.source} -> {args.target} (Argos, "
+        f"glossary {'off' if glossary is None else 'on'})",
         "",
         f"{len(rows)} phrases, average {elapsed_ms:.0f} ms per phrase on CPU.",
         "chrF compares characters with one reference translation (0-100, higher is closer);",

@@ -61,7 +61,7 @@ def test_phrases_are_replaced_by_their_fixed_translation():
     protected = glossary.protect("My bad, I whiffed", "en", "tr")
 
     assert protected.text == "ZX1, I whiffed"
-    assert glossary.restore(protected, "ZX1, ıskaladım") == "benim hatam, ıskaladım"
+    assert glossary.restore(protected, "ZX1, ıskaladım") == "Benim hatam, ıskaladım"
 
 
 def test_phrases_for_another_target_are_ignored():
@@ -139,3 +139,19 @@ def test_bundled_glossary_loads_and_knows_game_terms():
     assert "AWP" not in protected.text
     assert "CT" not in protected.text
     assert "nt" not in protected.text.split()
+
+
+def test_restore_capitalizes_like_the_source_sentence():
+    glossary = make(phrases={("en", "tr"): {"nice try": "iyi denemeydi"}})
+
+    protected = glossary.protect("Nice try, guys", "en", "tr")
+
+    assert glossary.restore(protected, "ZX1, çocuklar") == "İyi denemeydi, çocuklar"
+
+
+def test_restore_keeps_lowercase_when_the_source_was_lowercase():
+    glossary = make(phrases={("en", "tr"): {"nice try": "iyi denemeydi"}})
+
+    protected = glossary.protect("nice try", "en", "tr")
+
+    assert glossary.restore(protected, "ZX1") == "iyi denemeydi"
