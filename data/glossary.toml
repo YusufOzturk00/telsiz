@@ -23,12 +23,15 @@ u = "you"
 ur = "your"
 bc = "because"
 rdy = "ready"
+wtf = "what the fuck"
+usps = "USP-S"
+premiere = "Premier"
 
 [keep]
 # Matched case-insensitively.
 terms = [
     # weapons and equipment
-    "AWP", "AK", "M4", "M4A1", "M4A4", "Deagle", "USP", "Glock", "Scout", "SSG", "MP9",
+    "AWP", "AK", "M4", "M4A1", "M4A4", "Deagle", "USP-S", "USP", "Glock", "Scout", "SSG", "MP9",
     "MAC-10", "P90", "Tec-9", "Five-SeveN", "kevlar",
     # utility
     "flash", "flashbang", "smoke", "molly", "molotov", "incendiary", "nade", "decoy",
@@ -40,6 +43,9 @@ terms = [
     # map areas (generic)
     "mid", "connector", "jungle", "banana", "apps", "ramp", "heaven", "palace", "catwalk",
     "tunnels", "pit", "spawn",
+    # maps and game modes
+    "Mirage", "Inferno", "Nuke", "Overpass", "Ancient", "Anubis", "Dust 2", "Dust2", "Vertigo",
+    "matchmaking", "Premier", "Faceit",
     # other
     "AFK", "FF",
 ]
@@ -87,6 +93,19 @@ exact = [
 "he's baiting" = "seni yemliyor"
 "rotate" = "dönün"
 "they faked" = "fake attılar"
+"mid clear" = "mid temiz"
+"site clear" = "site temiz"
+"bomb A" = "bomba A'da"
+"bomb B" = "bomba B'de"
+"bomb by A" = "bomba A'da"
+"bomb by B" = "bomba B'de"
+"bomb on A" = "bomba A'da"
+"bomb on B" = "bomba B'de"
+"hold B" = "B'yi tut"
+"hold mid" = "mid'i tut"
+"what the fuck" = "ne oluyor lan"
+"nice shot" = "güzel atış"
+"nice" = "güzel"
 
 # How Turkish players say kept terms; used to pick the right case suffix
 # ("CT'ye", "A long'da", "connector'a"). Terms not listed fall back to their spelling.
@@ -154,3 +173,16 @@ exact = [
 "catwalk" = "katvok"
 "tunnels" = "tanıls"
 "spawn" = "spon"
+"USP-S" = "u es pe es"
+"Mirage" = "miraj"
+"Inferno" = "inferno"
+"Nuke" = "nyuk"
+"Overpass" = "ovırpes"
+"Ancient" = "eynşınt"
+"Anubis" = "anubis"
+"Dust 2" = "dast tu"
+"Dust2" = "dast tu"
+"Vertigo" = "vörtigo"
+"matchmaking" = "maçmeyking"
+"Premier" = "premiır"
+"Faceit" = "feysit"
