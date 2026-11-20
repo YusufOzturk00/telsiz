@@ -130,9 +130,19 @@ def build_pipeline(config: Config) -> tuple[Pipeline, UtteranceSegmenter]:
             prompts={k: v for k, v in config.asr.prompts.items() if v},
         )
     )
-    translator = create_argos_translator(
-        device=config.translate.device, cpu_threads=config.performance.cpu_threads
-    )
+    translator: Translator
+    if config.translate.engine == "nllb":
+        from telsiz.translate.nllb import create_nllb_translator
+
+        translator = create_nllb_translator(
+            config.translate.nllb_model,
+            device=config.translate.device,
+            cpu_threads=config.performance.cpu_threads,
+        )
+    else:
+        translator = create_argos_translator(
+            device=config.translate.device, cpu_threads=config.performance.cpu_threads
+        )
     sources = [lang for lang in config.allowed_source_langs if lang != config.target_lang]
     translator.prepare(sources, config.target_lang)
 

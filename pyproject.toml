@@ -40,6 +40,12 @@ argos = [
     "sacremoses>=0.1",
     "subword-nmt>=0.3.8",
 ]
+# NLLB-200 translation on CTranslate2 (MIT); model weights are CC-BY-NC-4.0, downloaded at runtime.
+nllb = [
+    "ctranslate2>=4.0,<5",
+    "tokenizers>=0.15",
+    "huggingface-hub>=0.21",
+]
 # NVIDIA CUDA 12 runtime libraries for GPU inference (optional).
 gpu = [
     "nvidia-cublas-cu12",
@@ -54,7 +60,7 @@ server = [
     "websockets>=12",
     "qrcode>=7.4",
 ]
-all = ["telsiz[whisper,argos,capture,server]"]
+all = ["telsiz[whisper,argos,nllb,capture,server]"]
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",

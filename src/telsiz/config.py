@@ -14,7 +14,7 @@ from telsiz.perf import PRIORITY_CLASSES
 from telsiz.vad import SegmenterOptions
 
 DEVICES = ("auto", "cuda", "cpu")
-ENGINES = ("argos",)
+ENGINES = ("argos", "nllb")
 SAME_LANGUAGE_MODES = ("show", "hide")
 
 
@@ -56,6 +56,7 @@ class GlossaryConfig:
 class TranslateConfig:
     engine: str = "argos"
     device: str = "cpu"
+    nllb_model: str = "nllb-600m"  # nllb-600m | nllb-1.3b (CC-BY-NC weights)
 
 
 @dataclass(frozen=True)
@@ -126,6 +127,8 @@ def validate(config: Config) -> Config:
         raise ValueError(f"same_language must be one of {SAME_LANGUAGE_MODES}")
     if config.translate.engine not in ENGINES:
         raise ValueError(f"translate.engine must be one of {ENGINES}")
+    if config.translate.nllb_model not in ("nllb-600m", "nllb-1.3b"):
+        raise ValueError('translate.nllb_model must be "nllb-600m" or "nllb-1.3b"')
     for name, device in (
         ("asr.device", config.asr.device),
         ("translate.device", config.translate.device),

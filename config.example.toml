@@ -65,6 +65,10 @@ port = 8765
 open_browser = true
 
 [translate]
-# "argos" runs locally. More engines (nllb, deepl) come later.
+# "argos" (default) or "nllb". Both run locally on this PC.
+# NLLB translates Russian/Ukrainian straight to Turkish (no English step) but its
+# model weights are licensed CC-BY-NC-4.0: non-commercial use only.
 engine = "argos"
 device = "cpu"
+# NLLB model: "nllb-600m" (~650 MB) or "nllb-1.3b" (~1.4 GB, slower, more accurate).
+nllb_model = "nllb-600m"

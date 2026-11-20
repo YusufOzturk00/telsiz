@@ -139,3 +139,16 @@ def test_server_port_must_be_a_user_port(tmp_path, port):
 def test_invalid_performance_settings_are_rejected(tmp_path, text):
     with pytest.raises(ValueError):
         load_config(write(tmp_path, text))
+
+
+def test_nllb_engine_settings(tmp_path):
+    config = load_config(
+        write(tmp_path, '[translate]\nengine = "nllb"\nnllb_model = "nllb-1.3b"\n')
+    )
+
+    assert config.translate.engine == "nllb"
+    assert config.translate.nllb_model == "nllb-1.3b"
+    assert load_config(None).translate.nllb_model == "nllb-600m"
+
+    with pytest.raises(ValueError):
+        load_config(write(tmp_path, '[translate]\nnllb_model = "nllb-54b"\n'))
