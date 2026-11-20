@@ -54,7 +54,7 @@ class SegmenterOptions:
     min_silence_ms: int = 500
     speech_pad_ms: int = 200
     min_speech_ms: int = 250
-    max_utterance_s: float = 10.0
+    max_utterance_s: float = 6.0  # long speech shows up sooner; split at a quiet moment
 
     @property
     def neg_threshold(self) -> float:

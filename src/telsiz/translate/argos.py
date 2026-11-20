@@ -46,13 +46,15 @@ class SentenceModel(Protocol):
 class ArgosModel:
     """One Argos package loaded into CTranslate2."""
 
-    def __init__(self, path: Path, device: str = "cpu") -> None:
+    def __init__(self, path: Path, device: str = "cpu", cpu_threads: int = 0) -> None:
         import ctranslate2
 
         metadata = json.loads((path / "metadata.json").read_text(encoding="utf-8"))
         self._target_prefix: str | None = metadata.get("target_prefix") or None
         self._tokenizer = load_tokenizer(path, metadata["from_code"], metadata["to_code"])
-        self._translator = ctranslate2.Translator(str(path / "model"), device=device)
+        self._translator = ctranslate2.Translator(
+            str(path / "model"), device=device, inter_threads=1, intra_threads=cpu_threads
+        )
 
     def translate(self, sentences: Sequence[str]) -> list[str]:
         if not sentences:
@@ -239,10 +241,14 @@ class ArgosPackageManager:
         return root / metadata[0].split("/")[0]
 
 
-def create_argos_translator(root: Path | None = None, device: str = "cpu") -> ArgosTranslator:
+def create_argos_translator(
+    root: Path | None = None, device: str = "cpu", cpu_threads: int = 0
+) -> ArgosTranslator:
     manager = ArgosPackageManager(root)
     return ArgosTranslator(
         manager.available_pairs,
-        lambda source, target: ArgosModel(manager.ensure(source, target), device=device),
+        lambda source, target: ArgosModel(
+            manager.ensure(source, target), device=device, cpu_threads=cpu_threads
+        ),
         installed_pairs=lambda: manager.installed().keys(),
     )

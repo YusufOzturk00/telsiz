@@ -21,12 +21,14 @@ def test_defaults_without_a_file():
 
     assert config.target_lang == "tr"
     assert config.allowed_source_langs == ["en", "ru", "uk", "pl", "de", "tr"]
-    assert config.asr.model == "small"
+    assert config.asr.model == "auto"
     assert config.asr.device == "auto"
     assert config.language.min_confidence == 0.6
     assert config.language.min_duration_s == 1.2
     assert config.language.sticky_window_s == 30.0
-    assert config.vad.max_utterance_s == 10.0
+    assert config.vad.max_utterance_s == 6.0
+    assert config.performance.priority == "below_normal"
+    assert config.performance.cpu_threads == 4
     assert config.filter.no_speech_threshold == 0.6
     assert config.same_language == "show"
     assert config.translate.engine == "argos"
@@ -128,3 +130,12 @@ def test_server_settings(tmp_path):
 def test_server_port_must_be_a_user_port(tmp_path, port):
     with pytest.raises(ValueError, match="port"):
         load_config(write(tmp_path, f"[server]\nport = {port}\n"))
+
+
+@pytest.mark.parametrize(
+    "text",
+    ['[performance]\npriority = "realtime"', "[performance]\ncpu_threads = -1"],
+)
+def test_invalid_performance_settings_are_rejected(tmp_path, text):
+    with pytest.raises(ValueError):
+        load_config(write(tmp_path, text))

@@ -182,8 +182,14 @@ class LiveRunner:
             latency = max(0, round((self._clock() - speech_end) * 1000))
             event = dataclasses.replace(event, latency_ms=latency)
         self.latencies.append(event.latency_ms)
+        timings = getattr(self._pipeline, "last_timings", {})
         log.info(
-            "[%s] %d ms end-to-end: %s", event.source_lang.upper(), event.latency_ms, event.original
+            "[%s] %d ms end-to-end (recognition %s ms, translation %s ms): %s",
+            event.source_lang.upper(),
+            event.latency_ms,
+            timings.get("asr_ms", "?"),
+            timings.get("translation_ms", "?"),
+            event.original,
         )
         self._publish(event)
 

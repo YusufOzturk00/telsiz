@@ -11,8 +11,9 @@ allowed_source_langs = ["en", "ru", "uk", "pl", "de", "tr"]
 same_language = "show"
 
 [asr]
-# Whisper model: "small", "medium" or "large-v3-turbo" (best, needs a GPU to be fast).
-model = "small"
+# Whisper model: "auto" picks large-v3-turbo on an NVIDIA GPU and small on the CPU.
+# Or set "small", "medium" or "large-v3-turbo".
+model = "auto"
 # "auto" uses an NVIDIA GPU when the CUDA libraries are installed, otherwise the CPU.
 device = "auto"
 compute_type = "auto"
@@ -35,7 +36,7 @@ threshold = 0.5
 min_silence_ms = 500
 speech_pad_ms = 200
 min_speech_ms = 250
-max_utterance_s = 10.0
+max_utterance_s = 6.0
 
 [filter]
 # Drops typical Whisper output on silence ("Thank you.", subtitle credits, loops).
@@ -50,6 +51,12 @@ max_ngram_repeats = 5
 enabled = true
 # Leave empty for the built-in data/glossary.toml, or point to your own file.
 path = ""
+
+[performance]
+# The game comes first: Telsiz lowers its own process priority ("normal", "below_normal"
+# or "idle") and uses at most this many CPU threads (0 = all) for recognition and translation.
+priority = "below_normal"
+cpu_threads = 4
 
 [server]
 # Local web page for a second screen or phone: http://127.0.0.1:<port>/

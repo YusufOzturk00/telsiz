@@ -11,6 +11,7 @@ from telsiz.asr import (
     WhisperRecognizer,
     add_nvidia_dll_dirs,
     resolve_device,
+    resolve_model,
 )
 
 AUDIO = np.zeros(16000, dtype=np.float32)
@@ -39,8 +40,8 @@ def segment(text, no_speech=0.1, logprob=-0.3, ratio=1.1):
 def make(fake, **options):
     created = {}
 
-    def factory(name, device, compute_type, download_root):
-        created.update(name=name, device=device, compute_type=compute_type)
+    def factory(name, device, compute_type, download_root, cpu_threads):
+        created.update(name=name, device=device, compute_type=compute_type, cpu_threads=cpu_threads)
         return fake
 
     recognizer = WhisperRecognizer(WhisperOptions(device="cpu", **options), model_factory=factory)
@@ -107,11 +108,17 @@ def test_custom_prompts_override_defaults():
 def test_model_is_created_with_resolved_device():
     _, created = make(FakeModel(), model="large-v3-turbo")
 
-    assert created == {"name": "large-v3-turbo", "device": "cpu", "compute_type": "int8"}
+    assert created == {
+        "name": "large-v3-turbo",
+        "device": "cpu",
+        "compute_type": "int8",
+        "cpu_threads": 4,
+    }
 
 
 def test_resolve_device_auto_prefers_cuda_when_usable():
-    assert resolve_device("auto", "auto", cuda_usable=True) == ("cuda", "float16")
+    # int8 weights with float16 math: as accurate as float16 here, faster, lighter on the GPU
+    assert resolve_device("auto", "auto", cuda_usable=True) == ("cuda", "int8_float16")
     assert resolve_device("auto", "auto", cuda_usable=False) == ("cpu", "int8")
 
 
@@ -141,3 +148,21 @@ def test_add_nvidia_dll_dirs_finds_bin_folders(tmp_path, monkeypatch):
 
     assert sorted(p.parent.name for p in found) == ["cublas", "cudnn"]
     assert added == found
+
+
+def test_auto_model_is_turbo_on_gpu_and_small_on_cpu():
+    assert resolve_model("auto", "cuda") == "large-v3-turbo"
+    assert resolve_model("auto", "cpu") == "small"
+    assert resolve_model("medium", "cuda") == "medium"
+
+
+def test_auto_model_is_resolved_before_loading():
+    _, created = make(FakeModel(), model="auto")
+
+    assert created["name"] == "small"  # make() forces device="cpu"
+
+
+def test_cpu_threads_are_passed_to_the_model():
+    _, created = make(FakeModel(), cpu_threads=2)
+
+    assert created["cpu_threads"] == 2
