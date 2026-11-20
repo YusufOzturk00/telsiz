@@ -51,6 +51,12 @@ enabled = true
 # Leave empty for the built-in data/glossary.toml, or point to your own file.
 path = ""
 
+[server]
+# Local web page for a second screen or phone: http://127.0.0.1:<port>/
+port = 8765
+# Open the page in the browser when "python -m telsiz --live" starts.
+open_browser = true
+
 [translate]
 # "argos" runs locally. More engines (nllb, deepl) come later.
 engine = "argos"

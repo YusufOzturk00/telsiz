@@ -130,3 +130,60 @@ def test_missing_optional_dependencies_give_install_hint(wav, capsys):
 
     assert main(["--input", str(wav)], run_file=runner) == 1
     assert 'pip install "telsiz[all]"' in capsys.readouterr().err
+
+
+# --- --live mode --------------------------------------------------------------
+
+
+class FakeLive:
+    def __init__(self, code=0):
+        self.code = code
+        self.calls = []
+
+    def __call__(self, config, *, phone, open_browser, show):
+        self.calls.append({"config": config, "phone": phone, "open_browser": open_browser})
+        show(fake_events()[0])
+        return self.code
+
+
+def test_live_starts_the_live_app_with_defaults(capsys):
+    live = FakeLive()
+
+    assert main(["--live"], run_live=live) == 0
+
+    [call] = live.calls
+    assert call["phone"] is False
+    assert call["open_browser"] is True
+    assert call["config"].server.port == 8765
+    assert "B'ye koşuyorlar" in capsys.readouterr().out
+
+
+def test_live_options(capsys):
+    live = FakeLive()
+
+    main(["--live", "--phone", "--port", "9000", "--no-browser", "--json"], run_live=live)
+
+    [call] = live.calls
+    assert call["phone"] is True
+    assert call["open_browser"] is False
+    assert call["config"].server.port == 9000
+    assert json.loads(capsys.readouterr().out.splitlines()[0])["type"] == "voice"
+
+
+def test_live_exit_code_is_passed_through():
+    assert main(["--live"], run_live=FakeLive(code=3)) == 3
+
+
+def test_input_and_live_cannot_be_combined(wav, capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--input", str(wav), "--live"], run_live=FakeLive())
+
+    assert exc_info.value.code == 2
+
+
+def test_phone_requires_live(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--phone"], run_live=FakeLive())
+
+    assert exc_info.value.code == 2
+    assert "--live" in capsys.readouterr().err

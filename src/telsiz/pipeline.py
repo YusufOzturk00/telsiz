@@ -110,10 +110,9 @@ class Pipeline:
             yield event
 
 
-def run_file(config: Config, path: Path) -> Iterator[VoiceEvent]:
-    """Build the real components from ``config`` and translate one WAV file."""
+def build_pipeline(config: Config) -> tuple[Pipeline, UtteranceSegmenter]:
+    """Load the real models described by ``config``. Slow: downloads on first use."""
     from telsiz.asr import WhisperOptions, WhisperRecognizer
-    from telsiz.audio.file_source import FileSource
     from telsiz.translate.argos import create_argos_translator
     from telsiz.vad import SileroDetector
 
@@ -141,5 +140,12 @@ def run_file(config: Config, path: Path) -> Iterator[VoiceEvent]:
         glossary = Glossary.load(config.glossary.path or default_glossary_path())
     settings = PipelineSettings(config.target_lang, config.same_language, config.filter, glossary)
     pipeline = Pipeline(recognizer, translator, selector, settings)
-    segmenter = UtteranceSegmenter(SileroDetector(), config.vad)
+    return pipeline, UtteranceSegmenter(SileroDetector(), config.vad)
+
+
+def run_file(config: Config, path: Path) -> Iterator[VoiceEvent]:
+    """Build the real components from ``config`` and translate one WAV file."""
+    from telsiz.audio.file_source import FileSource
+
+    pipeline, segmenter = build_pipeline(config)
     yield from pipeline.run(FileSource(path), segmenter)

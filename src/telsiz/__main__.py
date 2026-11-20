@@ -16,12 +16,24 @@ from telsiz.events import VoiceEvent
 DESCRIPTION = "Real-time voice chat translator for CS2"
 
 FileRunner = Callable[[Config, Path], Iterator[VoiceEvent]]
+LiveRunnerFn = Callable[..., int]
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="telsiz", description=DESCRIPTION)
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
-    parser.add_argument("--input", type=Path, metavar="WAV", help="translate a .wav file")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--input", type=Path, metavar="WAV", help="translate a .wav file")
+    mode.add_argument(
+        "--live", action="store_true", help="translate what this PC plays, shown in the browser"
+    )
+    parser.add_argument(
+        "--phone", action="store_true", help="with --live: also open the page on your phone (LAN)"
+    )
+    parser.add_argument("--port", type=int, help="with --live: web page port (default: 8765)")
+    parser.add_argument(
+        "--no-browser", action="store_true", help="with --live: do not open the browser"
+    )
     parser.add_argument("--target", metavar="LANG", help="target language code, e.g. tr")
     parser.add_argument("--config", type=Path, metavar="TOML", help="settings file")
     parser.add_argument(
@@ -40,6 +52,10 @@ def apply_overrides(config: Config, args: argparse.Namespace) -> Config:
     if args.device:
         asr = dataclasses.replace(asr, device=args.device)
     config = dataclasses.replace(config, asr=asr)
+    if getattr(args, "port", None):
+        config = dataclasses.replace(
+            config, server=dataclasses.replace(config.server, port=args.port)
+        )
     if args.target:
         config = dataclasses.replace(config, target_lang=args.target)
     return validate(config)
@@ -69,10 +85,22 @@ def _default_runner(config: Config, path: Path) -> Iterator[VoiceEvent]:
     return run_file(config, path)
 
 
-def main(argv: Sequence[str] | None = None, run_file: FileRunner | None = None) -> int:
+def _default_live(config: Config, **kwargs: object) -> int:
+    from telsiz.serve import run_live
+
+    return run_live(config, **kwargs)  # type: ignore[arg-type]
+
+
+def main(
+    argv: Sequence[str] | None = None,
+    run_file: FileRunner | None = None,
+    run_live: LiveRunnerFn | None = None,
+) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    if args.input is None:
+    if not args.live and (args.phone or args.port or args.no_browser):
+        parser.error("--phone, --port and --no-browser only work with --live")
+    if args.input is None and not args.live:
         parser.print_help()
         return 0
 
@@ -82,6 +110,27 @@ def main(argv: Sequence[str] | None = None, run_file: FileRunner | None = None) 
     except (OSError, ValueError) as exc:
         print(f"telsiz: invalid configuration: {exc}", file=sys.stderr)
         return 2
+
+    def show(event: VoiceEvent) -> None:
+        print(event.to_json() if args.json else format_event(event), flush=True)
+
+    if args.live:
+        live = run_live or _default_live
+        try:
+            return live(
+                config,
+                phone=args.phone,
+                open_browser=config.server.open_browser and not args.no_browser,
+                show=show,
+            )
+        except ImportError as exc:
+            print(
+                f"telsiz: a live-mode dependency is missing ({exc}).\n"
+                'Install it with: pip install "telsiz[all]"',
+                file=sys.stderr,
+            )
+            return 1
+
     if not args.input.is_file():
         print(f"telsiz: input file not found: {args.input}", file=sys.stderr)
         return 2
@@ -89,7 +138,7 @@ def main(argv: Sequence[str] | None = None, run_file: FileRunner | None = None) 
     runner = run_file or _default_runner
     try:
         for event in runner(config, args.input):
-            print(event.to_json() if args.json else format_event(event), flush=True)
+            show(event)
     except ImportError as exc:
         print(
             f"telsiz: a pipeline dependency is missing ({exc}).\n"

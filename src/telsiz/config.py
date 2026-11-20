@@ -34,6 +34,12 @@ class LanguageConfig:
 
 
 @dataclass(frozen=True)
+class ServerConfig:
+    port: int = 8765
+    open_browser: bool = True  # open the subtitle page when --live starts
+
+
+@dataclass(frozen=True)
 class GlossaryConfig:
     enabled: bool = True
     path: str = ""  # empty: the bundled data/glossary.toml
@@ -58,6 +64,7 @@ class Config:
     filter: FilterOptions = field(default_factory=FilterOptions)
     translate: TranslateConfig = field(default_factory=TranslateConfig)
     glossary: GlossaryConfig = field(default_factory=GlossaryConfig)
+    server: ServerConfig = field(default_factory=ServerConfig)
 
 
 _SECTIONS: dict[str, type] = {
@@ -67,6 +74,7 @@ _SECTIONS: dict[str, type] = {
     "filter": FilterOptions,
     "translate": TranslateConfig,
     "glossary": GlossaryConfig,
+    "server": ServerConfig,
 }
 
 
@@ -115,6 +123,8 @@ def validate(config: Config) -> Config:
     ):
         if device not in DEVICES:
             raise ValueError(f"{name} must be one of {DEVICES}")
+    if not 1024 <= config.server.port <= 65535:
+        raise ValueError("server.port must be between 1024 and 65535")
     return config
 
 
