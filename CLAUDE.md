@@ -1,4 +1,6 @@
-# CS2 Voice Translator — Proje Talimatları (Claude Code için)
+# Telsiz — Proje Talimatları (Claude Code için)
+
+**İsim kuralı:** Uygulamanın adı **Telsiz**. Repo adı `telsiz`, Python paket adı `telsiz`. "CS2" ve "Counter-Strike" Valve'ın markasıdır; uygulama adında, paket adında veya logoda kullanılmaz. Yalnızca açıklamada geçebilir: "Real-time voice chat translator for CS2".
 
 Bu dosya projenin ana talimat dosyasıdır. Her oturumda önce bunu oku. Kod, yorumlar ve commit mesajları **İngilizce** olacak (açık kaynak, uluslararası kitle).
 
@@ -114,13 +116,13 @@ Her pipeline aşaması ayrı bir modül olacak ve bir arayüzün (Protocol/ABC) 
 ## 5. Repo yapısı
 
 ```
-cs2-voice-translator/
+telsiz/
 ├── CLAUDE.md
 ├── README.md                 # Önce TR, sonra EN (aynı metin), "Neden güvenli? / Why is this safe?"
 ├── LICENSE                   # MIT
 ├── pyproject.toml
 ├── config.example.toml
-├── src/cs2vt/
+├── src/telsiz/
 │   ├── __main__.py           # giriş noktası, CLI argümanları
 │   ├── config.py
 │   ├── bus.py                # asyncio event bus
@@ -193,11 +195,11 @@ Her kilometre taşı ayrı bir branch/PR olarak ilerlesin. Bir kilometre taşın
 ### M0: İskelet
 - `pyproject.toml`, paket yapısı, `ruff`, `pytest`, MIT lisansı, README taslağı (önce Türkçe, sonra İngilizce; "Neden güvenli? / Why is this safe?" bölümü dahil)
 - GitHub Actions: `windows-latest` üzerinde lint ve test
-- **Kabul kriteri:** `python -m cs2vt --help` çalışır; CI yeşil.
+- **Kabul kriteri:** `python -m telsiz --help` çalışır; CI yeşil.
 
 ### M1: Dosyadan çeviri hattı (oyunsuz)
 - `FileSource` → VAD → ASR → Translator (argos) → konsola yazdırma
-- `python -m cs2vt --input sample.wav --target tr`
+- `python -m telsiz --input sample.wav --target tr`
 - **Kabul kriteri:** İngilizce ve Rusça örnek dosyalar doğru dilde tespit edilip Türkçeye çevrilir; testler sahte ASR ve sahte çevirmenle de çalışır.
 
 ### M2: Canlı sistem sesi ile web arayüzü

@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local configuration (config.example.toml is committed instead)
+config.toml
+
+# Native build output (M3)
+native/**/build/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Claude Code local tooling (not part of the project)
+.claude/skills/
+.claude/settings.local.json
+skills-lock.json
