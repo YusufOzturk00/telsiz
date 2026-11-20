@@ -58,7 +58,7 @@ def test_clip_is_detected_transcribed_and_translated(clip, recognizer, translato
     assert {e.source_lang for e in events} == {clip["language"]}
     original = " ".join(e.original for e in events)
     translated = " ".join(e.translated or "" for e in events)
-    assert word_error_rate(clip["text"], original) < 0.35
+    assert word_error_rate(clip["text"], original, clip["language"]) < 0.35
     assert translated.strip()
     assert translated != original
     assert not CYRILLIC.search(translated)

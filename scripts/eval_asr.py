@@ -70,7 +70,7 @@ def main() -> int:
                 decision = LanguageSelector(ALLOWED).choose(probs, len(sample) / 16000, now=0.0)
                 result = recognizer.transcribe(sample, decision.language)
                 elapsed = (time.perf_counter() - started) * 1000
-                wer = word_error_rate(clip["text"], result.text)
+                wer = word_error_rate(clip["text"], result.text, clip["language"])
                 mark = "" if decision.language == clip["language"] else " ❌"
                 lines.append(
                     f"| {clip['file']} | {condition} | {prompt_label} "

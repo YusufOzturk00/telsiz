@@ -28,6 +28,20 @@ def test_wer_requires_a_reference():
         word_error_rate("", "something")
 
 
+def test_wer_english_treats_spelled_and_written_numbers_alike():
+    assert word_error_rate("And sixty cents of it", "And 60 cents of it", language="en") == 0.0
+
+
+def test_wer_english_understands_dollar_amounts():
+    wer = word_error_rate("One dollar and eighty-seven cents.", "$1.87", language="en")
+
+    assert wer == pytest.approx(1 / 5)  # only the "and" is missing
+
+
+def test_wer_without_language_compares_words_literally():
+    assert word_error_rate("sixty cents", "60 cents") == pytest.approx(1 / 2)
+
+
 # --- chrF ------------------------------------------------------------------------
 
 
