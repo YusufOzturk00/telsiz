@@ -20,7 +20,11 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
-_PLACEHOLDER = re.compile(r"ZX(\d+)", re.IGNORECASE)
+from telsiz.turkish import VOWELS, harmonize_suffix
+
+# A placeholder, optionally followed by an apostrophe and a case suffix ("ZX1'e").
+_PLACEHOLDER = re.compile(r"ZX(\d+)(?:(['’])([^\W\d_]+))?", re.IGNORECASE)
+_HARMONY_LANGUAGES = {"tr"}
 _SPACE = re.compile(r"\s+")
 
 Pair = tuple[str, str]
@@ -32,6 +36,19 @@ class Protected:
     replacements: list[str] = field(default_factory=list)  # value for ZX1, ZX2, ...
     capitalize: bool = False  # the source sentence started with a capital letter
     target: str = ""
+    # indexes of replacements that are translated phrases (Turkish words), not kept terms
+    phrase_indexes: frozenset[int] = frozenset()
+
+
+_SOFTEN = {"p": "b", "ç": "c", "t": "d", "k": "ğ"}
+
+
+def _attach_turkish(word: str, suffix: str) -> str:
+    """Attach a case suffix to a Turkish word: no apostrophe, final consonant softens."""
+    ending = harmonize_suffix(word, suffix)
+    if ending[:1] in tuple(VOWELS) and word[-1:] in _SOFTEN:
+        word = word[:-1] + _SOFTEN[word[-1]]
+    return word + ending
 
 
 def _upper_first(text: str, language: str) -> str:
@@ -66,6 +83,8 @@ class Glossary:
     keep: list[str]  # kept as said, matched case-insensitively
     keep_exact: list[str]  # kept as said, matched with exact capitalization
     phrases: Mapping[Pair, Mapping[str, str]]  # (source, target) -> {phrase: translation}
+    # target language -> {term: how it is pronounced}, used to fix suffixes after the term
+    readings: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
 
     @classmethod
     def load(cls, path: Path | str) -> Glossary:
@@ -82,6 +101,7 @@ class Glossary:
             keep=list(keep.get("terms", [])),
             keep_exact=list(keep.get("exact", [])),
             phrases=phrases,
+            readings={lang: dict(table) for lang, table in data.get("pronounce", {}).items()},
         )
 
     def _expand(self, text: str, source: str) -> str:
@@ -99,31 +119,52 @@ class Glossary:
 
         exact: dict[str, str] = {_norm(t): t for t in self.keep_exact}
         loose: dict[str, str] = {_norm(t).lower(): t for t in self.keep}
-        loose.update(
-            {_norm(p).lower(): tr for p, tr in self.phrases.get((source, target), {}).items()}
-        )
-        entries = [(t, True) for t in exact] + [(t, False) for t in loose]
+        phrases = {_norm(p).lower(): tr for p, tr in self.phrases.get((source, target), {}).items()}
+        entries = [(t, True) for t in exact] + [(t, False) for t in {**loose, **phrases}]
         if not entries:
             return Protected(text, capitalize=capitalize, target=target)
         entries.sort(key=lambda e: len(e[0]), reverse=True)
         pattern = re.compile("|".join(_term_regex(term, is_exact) for term, is_exact in entries))
 
         replacements: list[str] = []
+        phrase_indexes: set[int] = set()
 
         def swap(match: re.Match[str]) -> str:
             found = _norm(match.group(0))
-            value = exact.get(found) or loose[found.lower()]
+            if found in exact:
+                value = exact[found]
+            elif found.lower() in phrases:
+                value = phrases[found.lower()]
+                phrase_indexes.add(len(replacements))
+            else:
+                value = loose[found.lower()]
             replacements.append(value)
             return f"ZX{len(replacements)}"
 
-        return Protected(pattern.sub(swap, text), replacements, capitalize, target)
+        return Protected(
+            pattern.sub(swap, text), replacements, capitalize, target, frozenset(phrase_indexes)
+        )
 
     def restore(self, protected: Protected, translated: str) -> str:
         values = protected.replacements
+        harmonize = protected.target in _HARMONY_LANGUAGES
+        readings = self.readings.get(protected.target, {})
 
         def back(match: re.Match[str]) -> str:
             index = int(match.group(1)) - 1
-            return values[index] if 0 <= index < len(values) else match.group(0)
+            if not 0 <= index < len(values):
+                return match.group(0)
+            value = values[index]
+            apostrophe, suffix = match.group(2), match.group(3)
+            if not suffix:
+                return value
+            if not harmonize:
+                return f"{value}{apostrophe}{suffix}"
+            if index in protected.phrase_indexes:
+                # A translated phrase is already Turkish: a clause takes no extra suffix,
+                # a single word takes it directly ("raunt" + "u" -> "raundu").
+                return value if " " in value.strip() else _attach_turkish(value, suffix)
+            return f"{value}'{harmonize_suffix(readings.get(value, value), suffix)}"
 
         if not values:
             return translated

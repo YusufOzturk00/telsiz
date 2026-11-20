@@ -87,7 +87,7 @@ def test_restore_keeps_turkish_suffixes_and_ignores_placeholder_case():
 
     protected = glossary.protect("go B long", "en", "tr")
 
-    assert glossary.restore(protected, "zx1'e git") == "B long'e git"
+    assert glossary.restore(protected, "zx1'e git") == "B long'a git"
 
 
 def test_restore_without_placeholders_returns_translation():
@@ -155,3 +155,59 @@ def test_restore_keeps_lowercase_when_the_source_was_lowercase():
     protected = glossary.protect("nice try", "en", "tr")
 
     assert glossary.restore(protected, "ZX1") == "iyi denemeydi"
+
+
+def test_turkish_suffix_follows_the_reading_of_the_term():
+    glossary = make(keep_exact=["CT"], readings={"tr": {"CT": "siti"}})
+
+    protected = glossary.protect("go CT", "en", "tr")
+
+    assert glossary.restore(protected, "ZX1'e git") == "CT'ye git"
+    assert glossary.restore(protected, "ZX1'te bekle") == "CT'de bekle"
+
+
+def test_turkish_suffix_falls_back_to_the_spelling():
+    glossary = make(keep=["mid"])
+
+    protected = glossary.protect("go mid", "en", "tr")
+
+    assert glossary.restore(protected, "ZX1’a git") == "mid'e git"
+
+
+def test_suffixes_are_untouched_for_other_targets():
+    glossary = make(keep=["mid"])
+
+    protected = glossary.protect("go mid", "en", "de")
+
+    assert glossary.restore(protected, "ZX1's Seite") == "mid's Seite"
+
+
+def test_load_reads_pronunciations(tmp_path):
+    path = tmp_path / "glossary.toml"
+    path.write_text('[pronounce.tr]\n"CT" = "siti"\n', encoding="utf-8")
+
+    assert Glossary.load(path).readings == {"tr": {"CT": "siti"}}
+
+
+def test_suffix_after_multi_word_turkish_phrase_is_dropped():
+    glossary = make(phrases={("en", "tr"): {"low hp": "canı az"}})
+
+    protected = glossary.protect("he is low hp", "en", "tr")
+
+    assert glossary.restore(protected, "o ZX1'da") == "o canı az"
+
+
+def test_suffix_joins_single_turkish_word_without_apostrophe():
+    glossary = make(phrases={("en", "tr"): {"round": "raunt", "bro": "kanka"}})
+
+    protected = glossary.protect("this round bro", "en", "tr")
+
+    assert glossary.restore(protected, "bu ZX1'u ZX2'ya") == "bu raundu kankaya"
+
+
+def test_kept_terms_keep_the_apostrophe():
+    glossary = make(keep=["AWP"], readings={"tr": {"AWP": "avp"}})
+
+    protected = glossary.protect("the AWP", "en", "tr")
+
+    assert glossary.restore(protected, "ZX1'yi al") == "AWP'ı al"
