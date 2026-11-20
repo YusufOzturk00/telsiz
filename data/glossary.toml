@@ -1,0 +1,71 @@
+# Telsiz game-term glossary (CLAUDE.md: GlossaryFilter).
+# Applied to recognized speech before translation, in this order:
+#   1. [expand.<lang>]  abbreviations become words ("nt" -> "nice try")
+#   2. [phrases.<source>.<target>]  idioms get a fixed translation
+#   3. [keep]  game terms stay exactly as players say them
+# Matching is whole-word. Longer entries win over shorter ones.
+
+[expand.en]
+nt = "nice try"
+gg = "good game"
+wp = "well played"
+ggwp = "good game well played"
+ez = "easy"
+np = "no problem"
+mb = "my bad"
+ty = "thank you"
+thx = "thanks"
+pls = "please"
+plz = "please"
+idk = "I don't know"
+brb = "be right back"
+u = "you"
+ur = "your"
+bc = "because"
+rdy = "ready"
+
+[keep]
+# Matched case-insensitively.
+terms = [
+    # weapons and equipment
+    "AWP", "AK", "M4", "M4A1", "M4A4", "Deagle", "USP", "Glock", "Scout", "SSG", "MP9",
+    "MAC-10", "P90", "Tec-9", "Five-SeveN", "kevlar",
+    # utility
+    "flash", "flashbang", "smoke", "molly", "molotov", "incendiary", "nade", "decoy",
+    # economy
+    "eco", "force buy", "full buy", "half buy", "force",
+    # actions and roles
+    "rush", "lurk", "lurker", "peek", "swing", "bait", "entry", "trade", "clutch", "retake",
+    "defuse", "ninja defuse", "plant", "rotate", "stack", "boost", "jiggle", "prefire",
+    # map areas (generic)
+    "mid", "connector", "jungle", "banana", "apps", "ramp", "heaven", "palace", "catwalk",
+    "tunnels", "pit", "spawn",
+    # other
+    "AFK", "FF",
+]
+# Matched only with exact capitalization: letters that are also ordinary English words.
+exact = [
+    "CT", "T spawn", "CT spawn", "HE",
+    "A long", "B long", "A short", "B short", "A site", "B site", "A main", "B main",
+    "A ramp", "B ramp", "A apps", "B apps",
+]
+
+[phrases.en.tr]
+"nice try" = "iyi denemeydi"
+"good game" = "iyi oyundu"
+"well played" = "iyi oynadınız"
+"my bad" = "benim hatam"
+"no problem" = "sorun yok"
+"one shot" = "tek mermilik"
+"he's one shot" = "tek mermilik canı kaldı"
+"he is one shot" = "tek mermilik canı kaldı"
+"he's lit" = "adamın canı az"
+"he is lit" = "adamın canı az"
+"I whiffed" = "ıskaladım"
+"whiffed" = "ıskaladı"
+"hp" = "can"
+"go go go" = "hadi hadi hadi"
+"bomb is planted" = "bomba kuruldu"
+"bomb planted" = "bomba kuruldu"
+"bomb is down" = "bomba kuruldu"
+"save your weapon" = "silahını kurtar"

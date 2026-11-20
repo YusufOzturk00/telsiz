@@ -1,5 +1,6 @@
 """Tests for the command-line entry point."""
 
+import json
 import subprocess
 import sys
 
@@ -7,6 +8,7 @@ import pytest
 
 import telsiz
 from telsiz.__main__ import main
+from telsiz.events import VoiceEvent
 
 
 def test_help_exits_successfully_and_describes_the_app(capsys):
@@ -51,3 +53,80 @@ def test_python_dash_m_telsiz_help_runs():
 
     assert result.returncode == 0, result.stderr
     assert "usage: telsiz" in result.stdout
+
+
+# --- --input mode -------------------------------------------------------------
+
+
+def fake_events():
+    return [
+        VoiceEvent("en", 0.97, "They're rushing B", "B'ye koşuyorlar", "tr", 820, ts=1.0),
+        VoiceEvent("tr", 0.99, "tamam", "tamam", "tr", 300, ts=2.0),
+        VoiceEvent("de", 0.9, "Hallo", None, "tr", 200, ts=3.0),
+    ]
+
+
+class FakeRunner:
+    def __init__(self, events=None, error=None):
+        self.events = events if events is not None else fake_events()
+        self.error = error
+        self.config = None
+        self.path = None
+
+    def __call__(self, config, path):
+        self.config, self.path = config, path
+        if self.error:
+            raise self.error
+        return iter(self.events)
+
+
+@pytest.fixture
+def wav(tmp_path):
+    path = tmp_path / "talk.wav"
+    path.write_bytes(b"RIFF")  # content is irrelevant to the fake runner
+    return path
+
+
+def test_input_prints_one_line_per_event(wav, capsys):
+    runner = FakeRunner()
+
+    assert main(["--input", str(wav)], run_file=runner) == 0
+
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0] == "[EN 0.97] They're rushing B → B'ye koşuyorlar  (820 ms)"
+    assert lines[1] == "[TR 0.99] tamam  (300 ms)"
+    assert lines[2] == "[DE 0.90] Hallo → (no translation)  (200 ms)"
+    assert runner.path == wav
+
+
+def test_json_flag_prints_event_json_lines(wav, capsys):
+    assert main(["--input", str(wav), "--json"], run_file=FakeRunner()) == 0
+
+    rows = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert [r["original"] for r in rows] == ["They're rushing B", "tamam", "Hallo"]
+
+
+def test_command_line_options_override_config(wav, tmp_path):
+    config_path = tmp_path / "config.toml"
+    config_path.write_text('target_lang = "de"\n[asr]\nbeam_size = 3\n', encoding="utf-8")
+    runner = FakeRunner([])
+
+    argv = ["--input", str(wav), "--config", str(config_path), "--target", "en"]
+    main([*argv, "--model", "medium", "--device", "cpu"], run_file=runner)
+
+    assert runner.config.target_lang == "en"
+    assert runner.config.asr.model == "medium"
+    assert runner.config.asr.device == "cpu"
+    assert runner.config.asr.beam_size == 3
+
+
+def test_missing_input_file_is_an_error(tmp_path, capsys):
+    assert main(["--input", str(tmp_path / "nope.wav")], run_file=FakeRunner()) == 2
+    assert "not found" in capsys.readouterr().err
+
+
+def test_missing_optional_dependencies_give_install_hint(wav, capsys):
+    runner = FakeRunner(error=ImportError("No module named 'faster_whisper'"))
+
+    assert main(["--input", str(wav)], run_file=runner) == 1
+    assert 'pip install "telsiz[all]"' in capsys.readouterr().err
