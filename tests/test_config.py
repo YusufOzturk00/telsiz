@@ -102,3 +102,13 @@ def test_invalid_values_are_rejected(tmp_path, text):
 def test_missing_file_raises(tmp_path):
     with pytest.raises(FileNotFoundError):
         load_config(tmp_path / "nope.toml")
+
+
+def test_glossary_settings(tmp_path):
+    assert load_config(None).glossary.enabled is True
+    assert load_config(None).glossary.path == ""
+
+    config = load_config(write(tmp_path, '[glossary]\nenabled = false\npath = "my.toml"\n'))
+
+    assert config.glossary.enabled is False
+    assert config.glossary.path == "my.toml"

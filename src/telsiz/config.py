@@ -34,6 +34,12 @@ class LanguageConfig:
 
 
 @dataclass(frozen=True)
+class GlossaryConfig:
+    enabled: bool = True
+    path: str = ""  # empty: the bundled data/glossary.toml
+
+
+@dataclass(frozen=True)
 class TranslateConfig:
     engine: str = "argos"
     device: str = "cpu"
@@ -51,6 +57,7 @@ class Config:
     vad: SegmenterOptions = field(default_factory=SegmenterOptions)
     filter: FilterOptions = field(default_factory=FilterOptions)
     translate: TranslateConfig = field(default_factory=TranslateConfig)
+    glossary: GlossaryConfig = field(default_factory=GlossaryConfig)
 
 
 _SECTIONS: dict[str, type] = {
@@ -59,6 +66,7 @@ _SECTIONS: dict[str, type] = {
     "vad": SegmenterOptions,
     "filter": FilterOptions,
     "translate": TranslateConfig,
+    "glossary": GlossaryConfig,
 }
 
 

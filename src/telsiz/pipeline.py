@@ -14,6 +14,7 @@ from telsiz.audio.resample import Resampler, to_mono
 from telsiz.config import Config
 from telsiz.events import VoiceEvent
 from telsiz.filters import FilterOptions, is_hallucination
+from telsiz.glossary import Glossary, default_glossary_path
 from telsiz.language import LanguageSelector
 from telsiz.translate.base import TranslationUnavailable, Translator
 from telsiz.vad import Utterance, UtteranceSegmenter
@@ -26,6 +27,7 @@ class PipelineSettings:
     target_lang: str
     same_language: str = "show"
     filter_options: FilterOptions = field(default_factory=FilterOptions)
+    glossary: Glossary | None = None
 
 
 class Pipeline:
@@ -69,7 +71,7 @@ class Pipeline:
             translated: str | None = result.text
         else:
             try:
-                translated = self.translator.translate(result.text, decision.language, target)
+                translated = self._translate(result.text, decision.language, target)
             except TranslationUnavailable as exc:
                 log.warning("%s", exc)
                 translated = None
@@ -83,6 +85,14 @@ class Pipeline:
             latency_ms=round((self._timer() - started) * 1000),
             ts=self._clock(),
         )
+
+    def _translate(self, text: str, source: str, target: str) -> str:
+        glossary = self.settings.glossary
+        if glossary is None:
+            return self.translator.translate(text, source, target)
+        protected = glossary.protect(text, source, target)
+        translated = self.translator.translate(protected.text, source, target)
+        return glossary.restore(protected, translated)
 
     def run(self, source: AudioSource, segmenter: UtteranceSegmenter) -> Iterator[VoiceEvent]:
         resampler: Resampler | None = None
@@ -126,7 +136,10 @@ def run_file(config: Config, path: Path) -> Iterator[VoiceEvent]:
         min_duration_s=config.language.min_duration_s,
         window_s=config.language.sticky_window_s,
     )
-    settings = PipelineSettings(config.target_lang, config.same_language, config.filter)
+    glossary = None
+    if config.glossary.enabled:
+        glossary = Glossary.load(config.glossary.path or default_glossary_path())
+    settings = PipelineSettings(config.target_lang, config.same_language, config.filter, glossary)
     pipeline = Pipeline(recognizer, translator, selector, settings)
     segmenter = UtteranceSegmenter(SileroDetector(), config.vad)
     yield from pipeline.run(FileSource(path), segmenter)

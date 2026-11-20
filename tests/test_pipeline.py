@@ -150,3 +150,17 @@ def test_run_processes_a_wav_file_end_to_end(tmp_path):
 
     assert [e.original for e in events] == ["Rush B", "Они идут на Б"]
     assert [e.source_lang for e in events] == ["en", "ru"]
+
+
+def test_glossary_protects_game_terms_around_translation():
+    from telsiz.glossary import Glossary
+
+    glossary = Glossary(expansions={}, keep=["AWP"], keep_exact=[], phrases={})
+    translator = FakeTranslator()
+    recognizer = FakeRecognizer({"probs": {"en": 0.9}, "text": "he has an AWP"})
+
+    event = make(recognizer, translator, glossary=glossary).process_utterance(utterance())
+
+    assert translator.calls == [("he has an ZX1", "en", "tr")]
+    assert event.translated == "<tr>he has an AWP"
+    assert event.original == "he has an AWP"

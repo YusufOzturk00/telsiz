@@ -44,6 +44,13 @@ log_prob_threshold = -1.0
 compression_ratio_threshold = 2.4
 max_ngram_repeats = 5
 
+[glossary]
+# Game terms stay as players say them ("AWP", "eco", "A long"), abbreviations are
+# expanded ("nt" -> "nice try") and idioms get fixed translations before translating.
+enabled = true
+# Leave empty for the built-in data/glossary.toml, or point to your own file.
+path = ""
+
 [translate]
 # "argos" runs locally. More engines (nllb, deepl) come later.
 engine = "argos"
