@@ -120,6 +120,33 @@ def test_prepare_loads_models_for_all_routes():
     assert set(loader.loaded) == {("en", "tr"), ("ru", "en")}
 
 
+def test_prepare_only_loads_installed_models():
+    loader = FakeLoader({("en", "tr"), ("ru", "en")})
+    translator = ArgosTranslator(
+        loader.available_pairs, loader, installed_pairs=lambda: {("en", "tr")}
+    )
+
+    translator.prepare(["en", "ru"], "tr")
+
+    assert set(loader.loaded) == {("en", "tr")}
+    # A missing model is fetched the first time that language is actually heard.
+    assert translator.translate("Да", "ru", "tr") == "Да|ru>en|en>tr"
+    assert set(loader.loaded) == {("en", "tr"), ("ru", "en")}
+
+
+def test_prepare_skips_models_that_cannot_be_loaded():
+    def loader(source, target):
+        if source == "uk":
+            raise TranslationUnavailable("unsupported package")
+        return FakeModel((source, target))
+
+    translator = ArgosTranslator(lambda: {("en", "tr"), ("uk", "en")}, loader)
+
+    translator.prepare(["en", "uk"], "tr")  # must not raise
+
+    assert translator.translate("go", "en", "tr") == "go|en>tr"
+
+
 # --- package download / install -------------------------------------------------
 
 

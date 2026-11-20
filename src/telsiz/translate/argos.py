@@ -85,12 +85,16 @@ class ArgosTranslator:
         available_pairs: Callable[[], Iterable[Pair]],
         load_model: Callable[[str, str], SentenceModel],
         pivot: str = PIVOT,
+        installed_pairs: Callable[[], Iterable[Pair]] | None = None,
     ) -> None:
         self._available_pairs = available_pairs
         self._load_model = load_model
         self._pivot = pivot
+        # When given, prepare() only loads these; others download on first use.
+        self._installed_pairs = installed_pairs
         self._pairs: set[Pair] | None = None
         self._models: dict[Pair, SentenceModel] = {}
+        self._failed: dict[Pair, TranslationUnavailable] = {}
 
     def _known_pairs(self) -> set[Pair]:
         if self._pairs is None:
@@ -109,11 +113,19 @@ class ArgosTranslator:
         raise TranslationUnavailable(f"No Argos model route from {source!r} to {target!r}")
 
     def _model(self, pair: Pair) -> SentenceModel:
+        if pair in self._failed:
+            raise self._failed[pair]
         if pair not in self._models:
-            self._models[pair] = self._load_model(*pair)
+            try:
+                self._models[pair] = self._load_model(*pair)
+            except TranslationUnavailable as exc:
+                self._failed[pair] = exc
+                raise
         return self._models[pair]
 
     def prepare(self, sources: list[str], target: str) -> None:
+        """Load installed models for these sources now; never fails on a single language."""
+        installed = set(self._installed_pairs()) if self._installed_pairs else None
         for source in sources:
             try:
                 steps = self.route(source, target)
@@ -121,7 +133,13 @@ class ArgosTranslator:
                 log.warning("%s", exc)
                 continue
             for pair in steps:
-                self._model(pair)
+                if installed is not None and pair not in installed:
+                    log.info("Argos model %s->%s will be downloaded when first needed", *pair)
+                    continue
+                try:
+                    self._model(pair)
+                except TranslationUnavailable as exc:
+                    log.warning("%s", exc)
 
     def translate(self, text: str, source: str, target: str) -> str:
         steps = self.route(source, target)
@@ -229,4 +247,5 @@ def create_argos_translator(root: Path | None = None, device: str = "cpu") -> Ar
     return ArgosTranslator(
         manager.available_pairs,
         lambda source, target: ArgosModel(manager.ensure(source, target), device=device),
+        installed_pairs=lambda: manager.installed().keys(),
     )
