@@ -1,0 +1,103 @@
+# Held-out English -> Turkish check (written for this project, MIT).
+# Written before tuning the glossary and NOT used while tuning it, so its
+# score shows whether glossary changes generalize beyond en_tr_phrases.toml.
+
+[[phrases]]
+category = "clean"
+en = "Two are pushing A short, I need help."
+tr = "İkisi A short'a basıyor, yardıma ihtiyacım var."
+
+[[phrases]]
+category = "clean"
+en = "Throw a molly under the car."
+tr = "Arabanın altına molly at."
+
+[[phrases]]
+category = "clean"
+en = "He's hiding in the corner with an AWP."
+tr = "Köşede AWP ile saklanıyor."
+
+[[phrases]]
+category = "clean"
+en = "We have no money, full save this round."
+tr = "Paramız yok, bu raunt full save yapalım."
+
+[[phrases]]
+category = "clean"
+en = "Wait for my flash, then go in together."
+tr = "Flash'ımı bekle, sonra birlikte girelim."
+
+[[phrases]]
+category = "clean"
+en = "The last one is in B site, low HP."
+tr = "Sonuncusu B site'ta, canı az."
+
+[[phrases]]
+category = "clean"
+en = "Don't push mid, hold the angle."
+tr = "Mid'e basma, açıyı tut."
+
+[[phrases]]
+category = "broken"
+en = "he have AWP, no peek long"
+tr = "Onda AWP var, long'a kafa çıkarma."
+
+[[phrases]]
+category = "broken"
+en = "I no can see, smoke is everywhere"
+tr = "Göremiyorum, her yer smoke."
+
+[[phrases]]
+category = "broken"
+en = "why nobody help me, I am alone in B"
+tr = "Neden kimse yardım etmiyor, B'de yalnızım."
+
+[[phrases]]
+category = "broken"
+en = "you go mid, me stay here"
+tr = "Sen mid'e git, ben burada kalıyorum."
+
+[[phrases]]
+category = "broken"
+en = "enemy is two, one is very low"
+tr = "Düşman iki kişi, birinin canı çok az."
+
+[[phrases]]
+category = "broken"
+en = "please not shoot, he is our team"
+tr = "Lütfen ateş etme, o bizim takımdan."
+
+[[phrases]]
+category = "slang"
+en = "gj bro, insane clutch"
+tr = "Eline sağlık kanka, inanılmaz clutch."
+
+[[phrases]]
+category = "slang"
+en = "ff, they're smurfing"
+tr = "Pes edelim, smurf oynuyorlar."
+
+[[phrases]]
+category = "slang"
+en = "nt guys, ez win next"
+tr = "İyi denemeydi arkadaşlar, sonrakini kolay alırız."
+
+[[phrases]]
+category = "slang"
+en = "he's one tap, push him"
+tr = "Tek mermilik canı kaldı, üstüne bas."
+
+[[phrases]]
+category = "slang"
+en = "my bad, I got flashed"
+tr = "Benim hatam, flash yedim."
+
+[[phrases]]
+category = "casual"
+en = "can you buy me a weapon, I have no money"
+tr = "Bana silah alabilir misin, param yok."
+
+[[phrases]]
+category = "casual"
+en = "good job everyone, let's keep going"
+tr = "Herkes iyi iş çıkardı, devam edelim."
