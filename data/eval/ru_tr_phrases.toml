@@ -1,0 +1,103 @@
+# Russian -> Turkish check, written for this project (MIT).
+# Measures direct ru->tr translation (NLLB) against the English pivot (Argos).
+# Categories: callout (team calls), slang (gamer Russian), casual.
+
+[[phrases]]
+category = "callout"
+ru = "Они идут на Б, их трое."
+tr = "B'ye geliyorlar, üç kişiler."
+
+[[phrases]]
+category = "callout"
+ru = "Один на мидле с авп."
+tr = "Mid'de bir kişi var, elinde AWP var."
+
+[[phrases]]
+category = "callout"
+ru = "У меня нет денег, давайте эко."
+tr = "Param yok, eco yapalım."
+
+[[phrases]]
+category = "callout"
+ru = "Кинь мне флешку."
+tr = "Bana flash at."
+
+[[phrases]]
+category = "callout"
+ru = "Бомба на А, идём ретейкать."
+tr = "Bomba A'da, retake'e gidiyoruz."
+
+[[phrases]]
+category = "callout"
+ru = "Последний на Б, он почти мёртвый."
+tr = "Sonuncusu B'de, neredeyse ölü."
+
+[[phrases]]
+category = "callout"
+ru = "Не пикай, жди флешку."
+tr = "Kafa çıkarma, flash'ı bekle."
+
+[[phrases]]
+category = "callout"
+ru = "Я его добил, минус один."
+tr = "Onu bitirdim, bir eksik."
+
+[[phrases]]
+category = "slang"
+ru = "Скинь мне калаш, пожалуйста."
+tr = "Bana AK atar mısın lütfen."
+
+[[phrases]]
+category = "slang"
+ru = "Ротейтимся на А, они фейканули."
+tr = "A'ya dönüyoruz, fake attılar."
+
+[[phrases]]
+category = "casual"
+ru = "Хорошая попытка, следующий раунд наш."
+tr = "İyi denemeydi, sonraki raunt bizim."
+
+[[phrases]]
+category = "casual"
+ru = "Пацаны, играем спокойно."
+tr = "Beyler, sakin oynuyoruz."
+
+[[phrases]]
+category = "slang"
+ru = "Он с дигла меня убил."
+tr = "Beni Deagle ile öldürdü."
+
+[[phrases]]
+category = "slang"
+ru = "Смок на кт, я захожу."
+tr = "CT'ye smoke, giriyorum."
+
+[[phrases]]
+category = "callout"
+ru = "Двое на шорте, осторожно."
+tr = "Short'ta iki kişi var, dikkat."
+
+[[phrases]]
+category = "casual"
+ru = "Блин, я промахнулся."
+tr = "Kahretsin, ıskaladım."
+
+[[phrases]]
+category = "callout"
+ru = "Кто разминирует?"
+tr = "Kim imha ediyor?"
+
+[[phrases]]
+category = "callout"
+ru = "Сейв, этот раунд не выиграем."
+tr = "Silahını kurtar, bu raundu kazanamayız."
+
+[[phrases]]
+category = "casual"
+ru = "Хорошая игра, ребята."
+tr = "İyi oyundu arkadaşlar."
+
+[[phrases]]
+category = "casual"
+ru = "Не стреляй в меня, я свой."
+tr = "Bana ateş etme, ben takımdanım."

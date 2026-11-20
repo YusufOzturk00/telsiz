@@ -17,6 +17,7 @@ from pathlib import Path
 from telsiz.glossary import Glossary, default_glossary_path
 from telsiz.quality.metrics import chrf, corpus_chrf
 from telsiz.translate.argos import create_argos_translator
+from telsiz.translate.nllb import NLLB_MODELS, create_nllb_translator
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -32,12 +33,17 @@ def main() -> int:
     parser.add_argument("--target", default="tr")
     parser.add_argument("--out", type=Path, help="also write the report to this file")
     parser.add_argument("--no-glossary", action="store_true", help="translate without the glossary")
+    parser.add_argument("--engine", choices=["argos", *NLLB_MODELS], default="argos")
     args = parser.parse_args()
     glossary = None if args.no_glossary else Glossary.load(default_glossary_path())
 
     phrases = tomllib.loads(args.phrases.read_text(encoding="utf-8"))["phrases"]
-    translator = create_argos_translator()
+    if args.engine == "argos":
+        translator = create_argos_translator(cpu_threads=4)
+    else:
+        translator = create_nllb_translator(args.engine, cpu_threads=4)
     translator.prepare([args.source], args.target)
+    translator.translate(phrases[0][args.source], args.source, args.target)  # warm-up
 
     rows = []
     started = time.perf_counter()
@@ -57,10 +63,10 @@ def main() -> int:
         by_category[category].append((hypothesis, reference))
 
     lines = [
-        f"# Translation check: {args.source} -> {args.target} (Argos, "
+        f"# Translation check: {args.source} -> {args.target} ({args.engine}, "
         f"glossary {'off' if glossary is None else 'on'})",
         "",
-        f"{len(rows)} phrases, average {elapsed_ms:.0f} ms per phrase on CPU.",
+        f"{len(rows)} phrases, average {elapsed_ms:.0f} ms per phrase on CPU (4 threads).",
         "chrF compares characters with one reference translation (0-100, higher is closer);",
         "it is a rough guide, read the translations themselves.",
         "",

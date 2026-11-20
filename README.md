@@ -46,6 +46,8 @@ Bilmen gerekenler:
 - Şimdilik bilgisayarında çalan **bütün sesi** dinler (müzik, videolar dahil). Yalnızca CS2'nin sesini dinlemek bir sonraki aşamada (M3) gelecek.
 - Ses diske yazılmaz ve bilgisayarından dışarı çıkmaz. Çeviri yereldir; telefon modu yalnızca yerel ağda çalışır.
 - Konsolda her satır için uçtan uca gecikme yazılır (konuşma bitişinden ekrana).
+- **Oyun önce gelir:** Telsiz kendi işlem önceliğini düşürür ve en fazla 4 işlemci çekirdeği kullanır. NVIDIA ekran kartı varsa konuşmayı yazıya çevirmek için onu kullanır (`large-v3-turbo`); ekran kartını hiç kullanmasın istersen `config.toml` içinde `[asr]` bölümüne `device = "cpu"` yaz.
+- **Çeviri motorları:** Varsayılan **Argos Translate**'tir (hızlı, serbest lisanslı). Daha iyi çeviri için **NLLB-200** seçilebilir: `config.toml` içinde `[translate]` bölümüne `engine = "nllb"` yaz. NLLB Rusça ve Ukraynacayı İngilizceye uğramadan doğrudan Türkçeye çevirir. **Not:** NLLB model ağırlıklarının lisansı **CC-BY-NC-4.0**'dır, yani yalnızca ticari olmayan kullanıma izin verir. Model ilk kullanımda indirilir; Telsiz'in kendisiyle dağıtılmaz.
 - Bir ses dosyasını çevirmek için: `python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr`
 
 Oyun terimleri (AWP, eco, A long…) çevrilmeden kalır ve kısaltmalar (nt, gg…) açılır; sözlük [data/glossary.toml](data/glossary.toml) dosyasında. Ölçüm raporları [docs/eval](docs/eval) klasöründe.
@@ -150,6 +152,8 @@ Things to know:
 - For now it listens to **all audio** playing on your PC (including music and videos). Listening only to CS2's audio comes in the next stage (M3).
 - Audio is never written to disk and never leaves your PC. Translation is local; phone mode only works on the local network.
 - The console shows the end-to-end latency of every line (from the end of speech to the screen).
+- **The game comes first:** Telsiz lowers its own process priority and uses at most 4 CPU cores. With an NVIDIA graphics card it uses the card for speech recognition (`large-v3-turbo`); if you do not want it to use the graphics card at all, write `device = "cpu"` in the `[asr]` section of `config.toml`.
+- **Translation engines:** The default is **Argos Translate** (fast, permissively licensed). For better translations you can choose **NLLB-200**: write `engine = "nllb"` in the `[translate]` section of `config.toml`. NLLB translates Russian and Ukrainian straight into Turkish without going through English. **Note:** the NLLB model weights are licensed **CC-BY-NC-4.0**, which allows non-commercial use only. The model is downloaded on first use; it is not distributed with Telsiz.
 - To translate an audio file: `python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr`
 
 Game terms (AWP, eco, A long…) stay untranslated and abbreviations (nt, gg…) are expanded; the glossary is in [data/glossary.toml](data/glossary.toml). Measurement reports are in the [docs/eval](docs/eval) folder.
