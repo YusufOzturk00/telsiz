@@ -133,8 +133,14 @@ class ArgosTranslator:
         return " ".join(sentences)
 
 
+# argos-net.com answers urllib's default "Python-urllib/x.y" agent with HTTP 403.
+# Identify honestly as a downloader instead of impersonating a browser.
+_USER_AGENT = "model-downloader/1.0"
+
+
 def _download(url: str) -> bytes:
-    with urllib.request.urlopen(url, timeout=120) as response:
+    request = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
+    with urllib.request.urlopen(request, timeout=120) as response:
         return response.read()
 
 

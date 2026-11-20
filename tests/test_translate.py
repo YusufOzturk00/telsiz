@@ -209,3 +209,28 @@ def test_offline_index_falls_back_to_installed_packages(tmp_path):
     manager = ArgosPackageManager(tmp_path, index_url="https://index", fetch=offline)
 
     assert manager.available_pairs() == set()
+
+
+def test_downloads_send_a_user_agent(monkeypatch):
+    from telsiz.translate import argos
+
+    seen = {}
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self):
+            return b"data"
+
+    def fake_urlopen(request, timeout):
+        seen["agent"] = request.get_header("User-agent")
+        return Response()
+
+    monkeypatch.setattr(argos.urllib.request, "urlopen", fake_urlopen)
+
+    assert argos._download("https://example.invalid/x") == b"data"
+    assert seen["agent"] and "urllib" not in seen["agent"].lower()
