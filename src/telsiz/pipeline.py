@@ -117,7 +117,7 @@ class Pipeline:
 def build_pipeline(config: Config) -> tuple[Pipeline, UtteranceSegmenter]:
     """Load the real models described by ``config``. Slow: downloads on first use."""
     from telsiz.asr import WhisperOptions, WhisperRecognizer
-    from telsiz.translate.argos import create_argos_translator
+    from telsiz.translate.factory import create_translator
     from telsiz.vad import SileroDetector
 
     recognizer = WhisperRecognizer(
@@ -130,19 +130,7 @@ def build_pipeline(config: Config) -> tuple[Pipeline, UtteranceSegmenter]:
             prompts={k: v for k, v in config.asr.prompts.items() if v},
         )
     )
-    translator: Translator
-    if config.translate.engine == "nllb":
-        from telsiz.translate.nllb import create_nllb_translator
-
-        translator = create_nllb_translator(
-            config.translate.nllb_model,
-            device=config.translate.device,
-            cpu_threads=config.performance.cpu_threads,
-        )
-    else:
-        translator = create_argos_translator(
-            device=config.translate.device, cpu_threads=config.performance.cpu_threads
-        )
+    translator = create_translator(config)
     sources = [lang for lang in config.allowed_source_langs if lang != config.target_lang]
     translator.prepare(sources, config.target_lang)
 

@@ -14,7 +14,7 @@ from telsiz.perf import PRIORITY_CLASSES
 from telsiz.vad import SegmenterOptions
 
 DEVICES = ("auto", "cuda", "cpu")
-ENGINES = ("argos", "nllb")
+ENGINES = ("auto", "argos", "nllb")
 SAME_LANGUAGE_MODES = ("show", "hide")
 
 
@@ -54,7 +54,7 @@ class GlossaryConfig:
 
 @dataclass(frozen=True)
 class TranslateConfig:
-    engine: str = "argos"
+    engine: str = "auto"  # auto: by installed RAM (NLLB-1.3B / NLLB-600M / Argos)
     device: str = "cpu"
     nllb_model: str = "nllb-600m"  # nllb-600m | nllb-1.3b (CC-BY-NC weights)
 

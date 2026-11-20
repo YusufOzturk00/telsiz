@@ -65,10 +65,11 @@ port = 8765
 open_browser = true
 
 [translate]
-# "argos" (default) or "nllb". Both run locally on this PC.
+# "auto" (default) picks by installed RAM: 22 GB or more -> NLLB-1.3B, 11 GB or more ->
+# NLLB-600M, less -> Argos. Or set "nllb" or "argos" yourself. Everything runs on this PC.
 # NLLB translates Russian/Ukrainian straight to Turkish (no English step) but its
 # model weights are licensed CC-BY-NC-4.0: non-commercial use only.
-engine = "argos"
+engine = "auto"
 device = "cpu"
-# NLLB model: "nllb-600m" (~650 MB) or "nllb-1.3b" (~1.4 GB, slower, more accurate).
+# Used when engine = "nllb": "nllb-600m" (~650 MB) or "nllb-1.3b" (~1.4 GB, more accurate).
 nllb_model = "nllb-600m"

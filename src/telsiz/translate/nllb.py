@@ -85,7 +85,7 @@ class NLLBTranslator:
         *,
         device: str = "cpu",
         cpu_threads: int = 0,
-        compute_type: str = "default",
+        compute_type: str = "auto",
         beam_size: int = 4,
         tokenizer: Any | None = None,
         translator: Any | None = None,
@@ -97,6 +97,8 @@ class NLLBTranslator:
             from tokenizers import Tokenizer
 
             tokenizer = tokenizer or Tokenizer.from_file(str(model_dir / "tokenizer.json"))
+            if compute_type == "auto":  # the saved int8_float16 is not efficient on the CPU
+                compute_type = "int8" if device == "cpu" else "int8_float16"
             translator = translator or ctranslate2.Translator(
                 str(model_dir),
                 device=device,

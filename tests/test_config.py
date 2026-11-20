@@ -31,7 +31,7 @@ def test_defaults_without_a_file():
     assert config.performance.cpu_threads == 4
     assert config.filter.no_speech_threshold == 0.6
     assert config.same_language == "show"
-    assert config.translate.engine == "argos"
+    assert config.translate.engine == "auto"
 
 
 def test_example_file_matches_the_defaults():
