@@ -45,10 +45,20 @@ gpu = [
     "nvidia-cublas-cu12",
     "nvidia-cudnn-cu12>=9,<10",
 ]
-all = ["telsiz[whisper,argos]"]
+# Live system-audio capture through WASAPI loopback (Apache-2.0).
+capture = ["PyAudioWPatch>=0.2.12"]
+# Local web server for the second screen and phone (MIT / BSD).
+server = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "websockets>=12",
+    "qrcode>=7.4",
+]
+all = ["telsiz[whisper,argos,capture,server]"]
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",
+    "httpx2>=2",  # Starlette TestClient
 ]
 
 [project.scripts]

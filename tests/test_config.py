@@ -112,3 +112,19 @@ def test_glossary_settings(tmp_path):
 
     assert config.glossary.enabled is False
     assert config.glossary.path == "my.toml"
+
+
+def test_server_settings(tmp_path):
+    assert load_config(None).server.port == 8765
+    assert load_config(None).server.open_browser is True
+
+    config = load_config(write(tmp_path, "[server]\nport = 9001\nopen_browser = false\n"))
+
+    assert config.server.port == 9001
+    assert config.server.open_browser is False
+
+
+@pytest.mark.parametrize("port", [0, 80, 70000])
+def test_server_port_must_be_a_user_port(tmp_path, port):
+    with pytest.raises(ValueError, match="port"):
+        load_config(write(tmp_path, f"[server]\nport = {port}\n"))

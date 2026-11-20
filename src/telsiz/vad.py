@@ -92,6 +92,10 @@ class UtteranceSegmenter:
         self._preroll: deque[np.ndarray] = deque(maxlen=self._pad_frames or None)
         self._reset_utterance()
 
+    @property
+    def options(self) -> SegmenterOptions:
+        return self._opts
+
     def _reset_utterance(self) -> None:
         self._frames: list[np.ndarray] = []
         self._probs: list[float] = []

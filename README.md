@@ -24,14 +24,29 @@ Telsiz yalnızca sesli sohbetle ilgilenir; yazılı sohbeti çevirmez.
 
 ### Durum
 
-🚧 **Erken geliştirme aşamasında.** Şu an bir ses dosyasındaki konuşmayı tespit edip Türkçeye çevirebiliyor (M1). Canlı oyun sesi, overlay ve telefon modu henüz yok; kullanılabilir bir sürüm yayınlandığında kurulum adımları burada olacak.
+🚧 **Erken geliştirme aşamasında.** Şu an bilgisayarında çalan sesi canlı olarak dinleyip konuşmaları Türkçeye çevirebiliyor ve çeviriyi tarayıcıda (ikinci ekran) ve telefonda gösterebiliyor (M2). Overlay ve yalnızca CS2 sesini dinleme henüz yok; kullanılabilir bir sürüm yayınlandığında kurulum adımları burada olacak.
 
-Geliştiriciler dosyadan çeviriyi şöyle deneyebilir (ilk çalıştırma modelleri indirir):
+Geliştiriciler şöyle deneyebilir (ilk çalıştırma modelleri indirir):
 
 ```powershell
 pip install -e ".[all]"
-python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr
+python -m telsiz --live
 ```
+
+Tarayıcıda `http://127.0.0.1:8765/` açılır ve çeviriler orada akar. Telefonda da görmek için:
+
+```powershell
+python -m telsiz --live --phone
+```
+
+Konsolda bir QR kod ve bağlantı çıkar; telefon aynı Wi‑Fi ağında olmalı. Bağlantıda bu oturuma özel rastgele bir erişim anahtarı vardır; anahtarı olmayan cihazlar reddedilir. Windows ilk seferde Python'un ağı kullanmasına izin isteyebilir: yalnızca **özel ağlar** için izin ver.
+
+Bilmen gerekenler:
+
+- Şimdilik bilgisayarında çalan **bütün sesi** dinler (müzik, videolar dahil). Yalnızca CS2'nin sesini dinlemek bir sonraki aşamada (M3) gelecek.
+- Ses diske yazılmaz ve bilgisayarından dışarı çıkmaz. Çeviri yereldir; telefon modu yalnızca yerel ağda çalışır.
+- Konsolda her satır için uçtan uca gecikme yazılır (konuşma bitişinden ekrana).
+- Bir ses dosyasını çevirmek için: `python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr`
 
 Oyun terimleri (AWP, eco, A long…) çevrilmeden kalır ve kısaltmalar (nt, gg…) açılır; sözlük [data/glossary.toml](data/glossary.toml) dosyasında. Ölçüm raporları [docs/eval](docs/eval) klasöründe.
 
@@ -113,14 +128,29 @@ Telsiz only deals with voice chat; it does not translate text chat.
 
 ### Status
 
-🚧 **In early development.** Right now it can detect speech in an audio file and translate it into Turkish (M1). Live game audio, the overlay and phone mode do not exist yet; installation steps will be here once a usable release is published.
+🚧 **In early development.** Right now it can listen to the audio playing on your PC live, translate the speech into Turkish and show the translation in a browser (second screen) and on your phone (M2). The overlay and listening only to CS2's audio do not exist yet; installation steps will be here once a usable release is published.
 
-Developers can try file translation like this (the first run downloads the models):
+Developers can try it like this (the first run downloads the models):
 
 ```powershell
 pip install -e ".[all]"
-python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr
+python -m telsiz --live
 ```
+
+`http://127.0.0.1:8765/` opens in the browser and the translations stream there. To see them on your phone too:
+
+```powershell
+python -m telsiz --live --phone
+```
+
+A QR code and a link appear in the console; the phone must be on the same Wi‑Fi network. The link contains a random access key for this session only; devices without the key are refused. The first time, Windows may ask whether Python may use the network: allow it for **private networks** only.
+
+Things to know:
+
+- For now it listens to **all audio** playing on your PC (including music and videos). Listening only to CS2's audio comes in the next stage (M3).
+- Audio is never written to disk and never leaves your PC. Translation is local; phone mode only works on the local network.
+- The console shows the end-to-end latency of every line (from the end of speech to the screen).
+- To translate an audio file: `python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr`
 
 Game terms (AWP, eco, A long…) stay untranslated and abbreviations (nt, gg…) are expanded; the glossary is in [data/glossary.toml](data/glossary.toml). Measurement reports are in the [docs/eval](docs/eval) folder.
 
