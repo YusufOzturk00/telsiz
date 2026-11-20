@@ -1,0 +1,23 @@
+# Test clips used by tests/test_slow_models.py and scripts/eval_asr.py.
+# "text" is the original book text of what is read (not a Whisper transcript).
+# Sources and licenses: see SOURCES.md.
+
+[[clips]]
+file = "en_magi_1.wav"
+language = "en"
+text = "One dollar and eighty-seven cents. That was all. And sixty cents of it was in pennies."
+
+[[clips]]
+file = "en_magi_2.wav"
+language = "en"
+text = "Three times Della counted it. One dollar and eighty-seven cents. And the next day would be Christmas."
+
+[[clips]]
+file = "ru_belkin_1.wav"
+language = "ru"
+text = "Для сего обратились было мы к Марии Алексеевне Трафилиной, ближайшей родственнице и наследнице Ивана Петровича Белкина; но, к сожалению, ей невозможно было нам доставить никакого о нем известия"
+
+[[clips]]
+file = "ru_belkin_2.wav"
+language = "ru"
+text = "Она советовала нам отнестись по сему предмету к одному почтенному мужу, бывшему другом Ивану Петровичу."
