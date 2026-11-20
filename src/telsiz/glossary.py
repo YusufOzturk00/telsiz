@@ -20,7 +20,11 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
-_PLACEHOLDER = re.compile(r"ZX(\d+)", re.IGNORECASE)
+from telsiz.turkish import harmonize_suffix
+
+# A placeholder, optionally followed by an apostrophe and a case suffix ("ZX1'e").
+_PLACEHOLDER = re.compile(r"ZX(\d+)(?:(['’])([^\W\d_]+))?", re.IGNORECASE)
+_HARMONY_LANGUAGES = {"tr"}
 _SPACE = re.compile(r"\s+")
 
 Pair = tuple[str, str]
@@ -66,6 +70,8 @@ class Glossary:
     keep: list[str]  # kept as said, matched case-insensitively
     keep_exact: list[str]  # kept as said, matched with exact capitalization
     phrases: Mapping[Pair, Mapping[str, str]]  # (source, target) -> {phrase: translation}
+    # target language -> {term: how it is pronounced}, used to fix suffixes after the term
+    readings: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
 
     @classmethod
     def load(cls, path: Path | str) -> Glossary:
@@ -82,6 +88,7 @@ class Glossary:
             keep=list(keep.get("terms", [])),
             keep_exact=list(keep.get("exact", [])),
             phrases=phrases,
+            readings={lang: dict(table) for lang, table in data.get("pronounce", {}).items()},
         )
 
     def _expand(self, text: str, source: str) -> str:
@@ -120,10 +127,20 @@ class Glossary:
 
     def restore(self, protected: Protected, translated: str) -> str:
         values = protected.replacements
+        harmonize = protected.target in _HARMONY_LANGUAGES
+        readings = self.readings.get(protected.target, {})
 
         def back(match: re.Match[str]) -> str:
             index = int(match.group(1)) - 1
-            return values[index] if 0 <= index < len(values) else match.group(0)
+            if not 0 <= index < len(values):
+                return match.group(0)
+            value = values[index]
+            apostrophe, suffix = match.group(2), match.group(3)
+            if not suffix:
+                return value
+            if harmonize:
+                return f"{value}'{harmonize_suffix(readings.get(value, value), suffix)}"
+            return f"{value}{apostrophe}{suffix}"
 
         if not values:
             return translated
