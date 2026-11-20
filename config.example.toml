@@ -1,0 +1,50 @@
+# Telsiz settings. Copy to config.toml and change what you need;
+# anything left out uses the default shown here.
+
+# Language translations are shown in (ISO 639-1 code).
+target_lang = "tr"
+
+# Languages your teammates may speak. Detection only picks from this list.
+allowed_source_langs = ["en", "ru", "uk", "pl", "de", "tr"]
+
+# When someone already speaks the target language: "show" the original text or "hide" it.
+same_language = "show"
+
+[asr]
+# Whisper model: "small", "medium" or "large-v3-turbo" (best, needs a GPU to be fast).
+model = "small"
+# "auto" uses an NVIDIA GPU when the CUDA libraries are installed, otherwise the CPU.
+device = "auto"
+compute_type = "auto"
+beam_size = 5
+
+# Extra vocabulary per language that helps Whisper hear game terms.
+# English already has a built-in list of CS2 callouts; set en = "" to turn it off.
+# [asr.prompts]
+# ru = "Раш Б, флешка, смок, дефуза"
+
+[language]
+# Below this confidence, or for utterances shorter than min_duration_s,
+# the language that dominated the last sticky_window_s seconds is used.
+min_confidence = 0.6
+min_duration_s = 1.2
+sticky_window_s = 30.0
+
+[vad]
+threshold = 0.5
+min_silence_ms = 500
+speech_pad_ms = 200
+min_speech_ms = 250
+max_utterance_s = 10.0
+
+[filter]
+# Drops typical Whisper output on silence ("Thank you.", subtitle credits, loops).
+no_speech_threshold = 0.6
+log_prob_threshold = -1.0
+compression_ratio_threshold = 2.4
+max_ngram_repeats = 5
+
+[translate]
+# "argos" runs locally. More engines (nllb, deepl) come later.
+engine = "argos"
+device = "cpu"
