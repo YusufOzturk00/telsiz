@@ -33,7 +33,7 @@ pip install -e ".[all]"
 python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr
 ```
 
-Ölçüm raporları [docs/eval](docs/eval) klasöründe.
+Oyun terimleri (AWP, eco, A long…) çevrilmeden kalır ve kısaltmalar (nt, gg…) açılır; sözlük [data/glossary.toml](data/glossary.toml) dosyasında. Ölçüm raporları [docs/eval](docs/eval) klasöründe.
 
 ### Neden güvenli?
 
@@ -122,7 +122,7 @@ pip install -e ".[all]"
 python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr
 ```
 
-Measurement reports are in the [docs/eval](docs/eval) folder.
+Game terms (AWP, eco, A long…) stay untranslated and abbreviations (nt, gg…) are expanded; the glossary is in [data/glossary.toml](data/glossary.toml). Measurement reports are in the [docs/eval](docs/eval) folder.
 
 ### Why is this safe?
 
