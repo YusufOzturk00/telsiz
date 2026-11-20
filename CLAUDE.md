@@ -57,8 +57,8 @@ README'de Türkçe bölümde "Neden güvenli?", İngilizce bölümde "Why is thi
 | Ses yakalama (M1) | `PyAudioWPatch` (WASAPI sistem loopback) | Basit başlangıç |
 | Ses yakalama (M3) | Process loopback | Microsoft `ApplicationLoopback` örneğinden (MIT) türetilmiş küçük bir C++ yardımcı exe/DLL, **CI'da kaynak koddan derlenecek**. Repoya hazır (prebuilt) binary konmaz |
 | VAD | `silero-vad` | Sadece konuşma bölümlerini ayıklar |
-| Konuşmayı yazıya çevirme ve dil tespiti | `faster-whisper` (CTranslate2) | Model seçilebilir: `small` / `medium` / `large-v3-turbo`. CUDA varsa GPU, yoksa CPU int8 |
-| Çeviri | Takılıp çıkarılabilir `Translator` arayüzü | Varsayılan: **Argos Translate** (yerel). Opsiyonel: **NLLB-200** (CTranslate2; model ağırlıkları CC-BY-NC, bunu README'de belirt), **DeepL API** (kullanıcının kendi anahtarıyla) |
+| Konuşmayı yazıya çevirme ve dil tespiti | `faster-whisper` (CTranslate2) | Model seçilebilir: `small` / `medium` / `large-v3-turbo`. Varsayılan `auto`: NVIDIA (CUDA) varsa GPU'da `large-v3-turbo` (`int8_float16`), yoksa CPU'da `small` (int8). AMD/Intel ekran kartları CUDA desteklemediği için CPU'ya düşer |
+| Çeviri | Takılıp çıkarılabilir `Translator` arayüzü | Varsayılan: **`auto`**, kurulu RAM'e göre seçilir: 22 GB ve üstü **NLLB-200 distilled 1.3B**, 11 GB ve üstü **NLLB-200 distilled 600M**, altı **Argos Translate**. Hepsi yerel ve CPU'da çalışır. NLLB yüklenemezse otomatik olarak Argos'a düşülür. NLLB model ağırlıkları **CC-BY-NC-4.0** (ticari olmayan kullanım); ağırlıklar uygulamayla dağıtılmaz, ilk kullanımda indirilir; bu README'de belirtilir. Opsiyonel: **DeepL API** (kullanıcının kendi anahtarıyla) |
 | Sunucu | `FastAPI` + `uvicorn` + WebSocket | Yalnızca yerel ağda çalışır, varsayılan `127.0.0.1`; telefon modu açıkça açıldığında LAN'a bağlanır |
 | Web arayüzü | Düz HTML/CSS/JS, build adımı yok | İkinci ekran ve telefon bunu kullanır |
 | Overlay | `PySide6` çerçevesiz, şeffaf pencere + ctypes ile extended style | Web arayüzüne değil, doğrudan iç event bus'a abone olur |
@@ -234,6 +234,7 @@ Her kilometre taşı ayrı bir branch/PR olarak ilerlesin. Bir kilometre taşın
 - Gerçek oyuncu ses kayıtlarını repoya koyma. Test sesleri CC0/kamu malı kaynaklardan (ör. Mozilla Common Voice CC0) gelsin ve kaynakları `tests/fixtures/SOURCES.md`'de listelensin.
 - Bölüm 2'deki kırmızı çizgilere değen herhangi bir öneri, kütüphane veya kod parçası görürsen **uygulama, bana sor.**
 - Küçük ve anlamlı commit'ler at; commit mesajları İngilizce olsun.
+- **Oyun performansı önce gelir:** Telsiz oyunun FPS'ini düşürmemeli. Telsiz kendi işlem önceliğini düşürür (`below_normal`), CPU iş parçacıklarını sınırlar (varsayılan 4) ve RAM'e göre hafif modeller seçer. Yeni bir özellik CPU, GPU veya RAM yükünü artırıyorsa önce ölç, sonra varsayılan yap. Ağır işleri (ör. çeviri) GPU'ya ancak ölçüm GPU'nun daha iyi olduğunu gösterirse taşı.
 
 ---
 

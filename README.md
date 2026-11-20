@@ -46,8 +46,14 @@ Bilmen gerekenler:
 - Şimdilik bilgisayarında çalan **bütün sesi** dinler (müzik, videolar dahil). Yalnızca CS2'nin sesini dinlemek bir sonraki aşamada (M3) gelecek.
 - Ses diske yazılmaz ve bilgisayarından dışarı çıkmaz. Çeviri yereldir; telefon modu yalnızca yerel ağda çalışır.
 - Konsolda her satır için uçtan uca gecikme yazılır (konuşma bitişinden ekrana).
-- **Oyun önce gelir:** Telsiz kendi işlem önceliğini düşürür ve en fazla 4 işlemci çekirdeği kullanır. NVIDIA ekran kartı varsa konuşmayı yazıya çevirmek için onu kullanır (`large-v3-turbo`); ekran kartını hiç kullanmasın istersen `config.toml` içinde `[asr]` bölümüne `device = "cpu"` yaz.
-- **Çeviri motorları:** Varsayılan **Argos Translate**'tir (hızlı, serbest lisanslı). Daha iyi çeviri için **NLLB-200** seçilebilir: `config.toml` içinde `[translate]` bölümüne `engine = "nllb"` yaz. NLLB Rusça ve Ukraynacayı İngilizceye uğramadan doğrudan Türkçeye çevirir. **Not:** NLLB model ağırlıklarının lisansı **CC-BY-NC-4.0**'dır, yani yalnızca ticari olmayan kullanıma izin verir. Model ilk kullanımda indirilir; Telsiz'in kendisiyle dağıtılmaz.
+- **Oyun önce gelir:** Telsiz kendi işlem önceliğini düşürür ve en fazla 4 işlemci çekirdeği kullanır. Kimse konuşmazken neredeyse hiç kaynak kullanmaz.
+- **Donanıma göre otomatik ayar:** Telsiz açılırken bilgisayarını tanır ve neyi neden seçtiğini konsola yazar.
+  - **Konuşmayı yazıya çevirme:** NVIDIA ekran kartı varsa ekran kartında `large-v3-turbo` (daha isabetli), yoksa işlemcide `small` çalışır. AMD ve Intel ekran kartları bu hızlandırmayı (CUDA) desteklemediği için işlemci kullanılır.
+  - **Çeviri:** Kurulu RAM'e göre seçilir: 24 GB ve üstü **NLLB-200 1.3B** (en iyi kalite), 12–16 GB **NLLB-200 600M**, daha azı **Argos Translate** (en hafif). Çeviri her zaman işlemcide çalışır; ekran kartı oyuna kalır. NLLB indirilemez ya da yüklenemezse Argos'a geçilir.
+  - **Kaynak kullanımı (yaklaşık):** NLLB-1.3B ~1.6 GB RAM, NLLB-600M ~0.8 GB, Argos ~0.4 GB; konuşmayı yazıya çevirme ekran kartında ~1.2 GB ekran kartı belleği kullanır.
+  - **İndirilenler (ilk kullanımda bir kez):** NVIDIA ve 32 GB RAM'li bir bilgisayarda toplam ~4.4 GB, NVIDIA ve 16 GB RAM'de ~3.7 GB, AMD/Intel ekran kartı ve 16 GB RAM'de ~1.3 GB.
+  - **Elle seçmek için:** `config.toml` içinde `[translate]` bölümüne `engine = "nllb"` veya `engine = "argos"`, `[asr]` bölümüne `device = "cpu"` (ekran kartını hiç kullanmaz) yaz.
+- **NLLB lisansı:** NLLB-200 model ağırlıklarının lisansı **CC-BY-NC-4.0**'dır, yani yalnızca ticari olmayan kullanıma izin verir. Telsiz'in kodu MIT lisanslıdır; NLLB modeli Telsiz ile dağıtılmaz, ilk kullanımda indirilir. NLLB Rusça ve Ukraynacayı İngilizceye uğramadan doğrudan Türkçeye çevirir.
 - Bir ses dosyasını çevirmek için: `python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr`
 
 Oyun terimleri (AWP, eco, A long…) çevrilmeden kalır ve kısaltmalar (nt, gg…) açılır; sözlük [data/glossary.toml](data/glossary.toml) dosyasında. Ölçüm raporları [docs/eval](docs/eval) klasöründe.
@@ -152,8 +158,14 @@ Things to know:
 - For now it listens to **all audio** playing on your PC (including music and videos). Listening only to CS2's audio comes in the next stage (M3).
 - Audio is never written to disk and never leaves your PC. Translation is local; phone mode only works on the local network.
 - The console shows the end-to-end latency of every line (from the end of speech to the screen).
-- **The game comes first:** Telsiz lowers its own process priority and uses at most 4 CPU cores. With an NVIDIA graphics card it uses the card for speech recognition (`large-v3-turbo`); if you do not want it to use the graphics card at all, write `device = "cpu"` in the `[asr]` section of `config.toml`.
-- **Translation engines:** The default is **Argos Translate** (fast, permissively licensed). For better translations you can choose **NLLB-200**: write `engine = "nllb"` in the `[translate]` section of `config.toml`. NLLB translates Russian and Ukrainian straight into Turkish without going through English. **Note:** the NLLB model weights are licensed **CC-BY-NC-4.0**, which allows non-commercial use only. The model is downloaded on first use; it is not distributed with Telsiz.
+- **The game comes first:** Telsiz lowers its own process priority and uses at most 4 CPU cores. While nobody speaks it uses almost no resources.
+- **Automatic settings for your hardware:** At startup Telsiz looks at your PC and writes what it chose and why to the console.
+  - **Speech recognition:** With an NVIDIA graphics card, `large-v3-turbo` (more accurate) runs on the card; otherwise `small` runs on the processor. AMD and Intel graphics cards do not support this acceleration (CUDA), so the processor is used.
+  - **Translation:** Chosen by installed RAM: 24 GB or more **NLLB-200 1.3B** (best quality), 12–16 GB **NLLB-200 600M**, less **Argos Translate** (lightest). Translation always runs on the processor; the graphics card is left to the game. If NLLB cannot be downloaded or loaded, Argos is used.
+  - **Resource use (approximate):** NLLB-1.3B ~1.6 GB RAM, NLLB-600M ~0.8 GB, Argos ~0.4 GB; speech recognition on the graphics card uses ~1.2 GB of graphics memory.
+  - **Downloads (once, on first use):** about 4.4 GB in total on a PC with NVIDIA and 32 GB RAM, ~3.7 GB with NVIDIA and 16 GB RAM, ~1.3 GB with an AMD/Intel graphics card and 16 GB RAM.
+  - **To choose yourself:** in `config.toml` write `engine = "nllb"` or `engine = "argos"` in the `[translate]` section, and `device = "cpu"` in the `[asr]` section (never uses the graphics card).
+- **NLLB license:** the NLLB-200 model weights are licensed **CC-BY-NC-4.0**, which allows non-commercial use only. Telsiz's code is MIT-licensed; the NLLB model is not distributed with Telsiz and is downloaded on first use. NLLB translates Russian and Ukrainian straight into Turkish without going through English.
 - To translate an audio file: `python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr`
 
 Game terms (AWP, eco, A long…) stay untranslated and abbreviations (nt, gg…) are expanded; the glossary is in [data/glossary.toml](data/glossary.toml). Measurement reports are in the [docs/eval](docs/eval) folder.
