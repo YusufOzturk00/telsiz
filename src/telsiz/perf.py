@@ -21,6 +21,22 @@ PRIORITY_CLASSES = {
 }
 
 
+def _kernel32() -> Any:
+    """kernel32 with real HANDLE types.
+
+    Without them ctypes passes the pseudo-handle from GetCurrentProcess() as a 32-bit
+    int, which 64-bit Windows does not accept, and SetPriorityClass fails.
+    """
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+    kernel32.GetCurrentProcess.argtypes = []
+    kernel32.SetPriorityClass.restype = wintypes.BOOL
+    kernel32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+    return kernel32
+
+
 def set_process_priority(level: str, kernel32: Any | None = None) -> bool:
     """Lower this process's priority. Returns True when it was changed."""
     if level not in PRIORITY_CLASSES:
@@ -31,7 +47,7 @@ def set_process_priority(level: str, kernel32: Any | None = None) -> bool:
     if kernel32 is None:
         if sys.platform != "win32":
             return False
-        kernel32 = ctypes.windll.kernel32
+        kernel32 = _kernel32()
     if not kernel32.SetPriorityClass(kernel32.GetCurrentProcess(), priority_class):
         log.warning("Could not lower Telsiz's process priority")
         return False
