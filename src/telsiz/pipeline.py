@@ -46,6 +46,7 @@ class Pipeline:
         self.settings = settings
         self._clock = clock
         self._timer = timer
+        self.last_timings: dict[str, int] = {}
 
     def process_utterance(self, utt: Utterance) -> VoiceEvent | None:
         started = self._timer()
@@ -54,6 +55,8 @@ class Pipeline:
         probs = self.recognizer.detect_language(utt.audio)
         decision = self.selector.choose(probs, utt.duration, now=utt.end)
         result = self.recognizer.transcribe(utt.audio, decision.language)
+        recognized = self._timer()
+        self.last_timings = {"asr_ms": round((recognized - started) * 1000), "translation_ms": 0}
 
         if is_hallucination(
             result.text,
@@ -75,6 +78,7 @@ class Pipeline:
             except TranslationUnavailable as exc:
                 log.warning("%s", exc)
                 translated = None
+            self.last_timings["translation_ms"] = round((self._timer() - recognized) * 1000)
 
         return VoiceEvent(
             source_lang=decision.language,
@@ -113,7 +117,7 @@ class Pipeline:
 def build_pipeline(config: Config) -> tuple[Pipeline, UtteranceSegmenter]:
     """Load the real models described by ``config``. Slow: downloads on first use."""
     from telsiz.asr import WhisperOptions, WhisperRecognizer
-    from telsiz.translate.argos import create_argos_translator
+    from telsiz.translate.factory import create_translator
     from telsiz.vad import SileroDetector
 
     recognizer = WhisperRecognizer(
@@ -122,10 +126,11 @@ def build_pipeline(config: Config) -> tuple[Pipeline, UtteranceSegmenter]:
             device=config.asr.device,
             compute_type=config.asr.compute_type,
             beam_size=config.asr.beam_size,
+            cpu_threads=config.performance.cpu_threads,
             prompts={k: v for k, v in config.asr.prompts.items() if v},
         )
     )
-    translator = create_argos_translator(device=config.translate.device)
+    translator = create_translator(config)
     sources = [lang for lang in config.allowed_source_langs if lang != config.target_lang]
     translator.prepare(sources, config.target_lang)
 

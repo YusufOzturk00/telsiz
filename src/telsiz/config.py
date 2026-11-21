@@ -10,16 +10,17 @@ from typing import Any
 
 from telsiz.asr import DEFAULT_PROMPTS
 from telsiz.filters import FilterOptions
+from telsiz.perf import PRIORITY_CLASSES
 from telsiz.vad import SegmenterOptions
 
 DEVICES = ("auto", "cuda", "cpu")
-ENGINES = ("argos",)
+ENGINES = ("auto", "argos", "nllb")
 SAME_LANGUAGE_MODES = ("show", "hide")
 
 
 @dataclass(frozen=True)
 class AsrConfig:
-    model: str = "small"
+    model: str = "auto"
     device: str = "auto"
     compute_type: str = "auto"
     beam_size: int = 5
@@ -31,6 +32,12 @@ class LanguageConfig:
     min_confidence: float = 0.6
     min_duration_s: float = 1.2
     sticky_window_s: float = 30.0
+
+
+@dataclass(frozen=True)
+class PerformanceConfig:
+    priority: str = "below_normal"  # normal | below_normal | idle (Telsiz's own process)
+    cpu_threads: int = 4  # CPU threads for speech recognition and translation; 0 = all
 
 
 @dataclass(frozen=True)
@@ -47,8 +54,9 @@ class GlossaryConfig:
 
 @dataclass(frozen=True)
 class TranslateConfig:
-    engine: str = "argos"
+    engine: str = "auto"  # auto: by installed RAM (NLLB-1.3B / NLLB-600M / Argos)
     device: str = "cpu"
+    nllb_model: str = "nllb-600m"  # nllb-600m | nllb-1.3b (CC-BY-NC weights)
 
 
 @dataclass(frozen=True)
@@ -65,6 +73,7 @@ class Config:
     translate: TranslateConfig = field(default_factory=TranslateConfig)
     glossary: GlossaryConfig = field(default_factory=GlossaryConfig)
     server: ServerConfig = field(default_factory=ServerConfig)
+    performance: PerformanceConfig = field(default_factory=PerformanceConfig)
 
 
 _SECTIONS: dict[str, type] = {
@@ -75,6 +84,7 @@ _SECTIONS: dict[str, type] = {
     "translate": TranslateConfig,
     "glossary": GlossaryConfig,
     "server": ServerConfig,
+    "performance": PerformanceConfig,
 }
 
 
@@ -117,12 +127,18 @@ def validate(config: Config) -> Config:
         raise ValueError(f"same_language must be one of {SAME_LANGUAGE_MODES}")
     if config.translate.engine not in ENGINES:
         raise ValueError(f"translate.engine must be one of {ENGINES}")
+    if config.translate.nllb_model not in ("nllb-600m", "nllb-1.3b"):
+        raise ValueError('translate.nllb_model must be "nllb-600m" or "nllb-1.3b"')
     for name, device in (
         ("asr.device", config.asr.device),
         ("translate.device", config.translate.device),
     ):
         if device not in DEVICES:
             raise ValueError(f"{name} must be one of {DEVICES}")
+    if config.performance.priority not in PRIORITY_CLASSES:
+        raise ValueError(f"performance.priority must be one of {sorted(PRIORITY_CLASSES)}")
+    if config.performance.cpu_threads < 0:
+        raise ValueError("performance.cpu_threads must be 0 or more")
     if not 1024 <= config.server.port <= 65535:
         raise ValueError("server.port must be between 1024 and 65535")
     return config

@@ -35,3 +35,30 @@ adjusted while looking at it.
 Known limits: sentence word order from the small Argos model ("Rush atıyorlar
 B"), imperative verbs around game terms ("Smoke CT and flash for me"), and
 slang that is not in the glossary yet.
+
+## Translation engines
+
+chrF with the glossary on; time is the average per phrase on the CPU with 4 threads.
+The Russian set (`data/eval/ru_tr_phrases.toml`) was written for this comparison.
+
+| Phrase set | Argos | NLLB-600M | NLLB-1.3B |
+|---|---|---|---|
+| English held-out | 48.8 | 55.8 | **63.5** |
+| English main | 55.2 | 60.6 | 60.1 |
+| Russian | 29.2 | 36.5 | **42.1** |
+| Time per phrase | 46-90 ms | ~300 ms | ~550-735 ms |
+
+NLLB is not faster on the GPU (measured on an RTX 4060), so translation stays on the CPU.
+Both engines fail on Russian gamer slang ("флешка", "калаш", "ретейкать"); a Russian glossary
+with its own held-out set is the next step. Reports: `engines-*.md`.
+
+## Speech recognition settings
+
+Transcription only, the four test clips clean and with two simulated voice-chat profiles:
+
+| Model | Device | Compute | Mean WER | Median time |
+|---|---|---|---|---|
+| large-v3-turbo | cuda | float16 | 10 % | 812 ms |
+| **large-v3-turbo** | **cuda** | **int8_float16** | **11 %** | **621 ms** |
+| small | cuda | float16 | 26 % | 717 ms |
+| small | cpu | int8 | 27 % | 1899 ms |

@@ -32,6 +32,7 @@ def run_live(
     from telsiz.audio.system_loopback import SystemLoopbackSource
     from telsiz.bus import EventBus
     from telsiz.live import LiveRunner, latency_summary
+    from telsiz.perf import set_process_priority
     from telsiz.pipeline import build_pipeline
     from telsiz.server.app import ServerSettings, create_app
     from telsiz.util.net import lan_ip, new_token
@@ -50,6 +51,7 @@ def run_live(
         )
         return 2
 
+    set_process_priority(config.performance.priority)
     log.info("Loading models (the first run downloads them)...")
     pipeline, segmenter = build_pipeline(config)
 

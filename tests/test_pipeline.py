@@ -164,3 +164,13 @@ def test_glossary_protects_game_terms_around_translation():
     assert translator.calls == [("he has an ZX1", "en", "tr")]
     assert event.translated == "<tr>he has an AWP"
     assert event.original == "he has an AWP"
+
+
+def test_stage_timings_are_recorded():
+    recognizer = FakeRecognizer({"probs": {"en": 0.9}, "text": "Rush B"})
+    pipeline = make(recognizer)
+
+    pipeline.process_utterance(utterance())
+
+    assert set(pipeline.last_timings) == {"asr_ms", "translation_ms"}
+    assert all(v >= 0 for v in pipeline.last_timings.values())
