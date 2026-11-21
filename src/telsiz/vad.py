@@ -175,7 +175,9 @@ class UtteranceSegmenter:
         window_start = int(len(probs) * 0.7)
         smoothed = np.convolve(probs, np.ones(3) / 3, mode="same")
         dip = window_start + int(np.argmin(smoothed[window_start:]))
-        cut = dip if smoothed[dip] < self._opts.continue_threshold else len(self._frames)
+        # The quietest moment counts if it is below the start threshold: in continuous
+        # speech under game sound, pauses between words rarely fall under 0.35.
+        cut = dip if smoothed[dip] < self._opts.threshold else len(self._frames)
 
         out = self._emit(cut)
         rest_frames, rest_probs = self._frames[cut:], self._probs[cut:]
