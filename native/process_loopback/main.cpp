@@ -25,6 +25,7 @@
 
 #include <audioclient.h>
 #include <audioclientactivationparams.h>
+#include <avrt.h>
 #include <mmdeviceapi.h>
 #include <propidl.h>
 #include <wrl/client.h>
@@ -41,7 +42,7 @@ using Microsoft::WRL::ComPtr;
 
 namespace {
 
-constexpr char kVersion[] = "telsiz-loopback 1";
+constexpr char kVersion[] = "telsiz-loopback 2";
 
 constexpr int kExitOk = 0;
 constexpr int kExitUsage = 1;
@@ -303,15 +304,20 @@ int wmain(int argc, wchar_t** argv) {
     const unsigned long pid = std::wcstoul(argv[2], &end, 10);
     if (end == argv[2] || *end != L'\0' || errno == ERANGE || pid == 0) return Usage();
 
-    // The game comes first: never compete with it for CPU time.
-    SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
+    // Register the capture thread with the Multimedia Class Scheduler ("Audio"), as audio
+    // apps do: it only copies a few kilobytes per buffer, but if a busy game delays it, the
+    // audio engine's buffer overflows and speech is lost. Failure is not fatal.
+    DWORD mmcss_task = 0;
+    HANDLE mmcss = AvSetMmThreadCharacteristicsW(L"Audio", &mmcss_task);
 
     HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     if (FAILED(hr)) {
         std::fprintf(stderr, "CoInitializeEx failed: 0x%08lx\n", static_cast<unsigned long>(hr));
+        if (mmcss != nullptr) AvRevertMmThreadCharacteristics(mmcss);
         return kExitFailed;
     }
     const int code = Capture(static_cast<DWORD>(pid));
     CoUninitialize();
+    if (mmcss != nullptr) AvRevertMmThreadCharacteristics(mmcss);
     return code;
 }

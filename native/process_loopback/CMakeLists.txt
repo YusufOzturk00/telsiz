@@ -12,7 +12,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 add_executable(telsiz-loopback main.cpp)
 target_compile_definitions(telsiz-loopback PRIVATE UNICODE _UNICODE NOMINMAX _WIN32_WINNT=0x0A00)
-target_link_libraries(telsiz-loopback PRIVATE mmdevapi ole32)
+target_link_libraries(telsiz-loopback PRIVATE mmdevapi ole32 avrt)
 if(MSVC)
     target_compile_options(telsiz-loopback PRIVATE /W4 /WX /permissive- /utf-8)
 endif()
