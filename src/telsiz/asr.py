@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ctypes
+import hashlib
 import importlib.util
 import logging
 import os
@@ -143,6 +144,31 @@ def _create_faster_whisper_model(
 ModelFactory = Callable[[str, str, str, "str | None", int], Any]
 
 
+class EncoderCache:
+    """Remembers the last encoder output so one clip is encoded only once.
+
+    Language detection and transcription each run Whisper's encoder, the most
+    expensive step, on the same 30 s window. Caching the last result by content
+    halves the work per utterance (and the CPU or GPU time taken from the game).
+    """
+
+    def __init__(self, encode: Callable[[np.ndarray], Any]) -> None:
+        self._encode = encode
+        self._key: tuple[tuple[int, ...], bytes] | None = None
+        self._value: Any = None
+        self.hits = 0
+
+    def __call__(self, features: np.ndarray) -> Any:
+        data = np.ascontiguousarray(features)
+        key = (data.shape, hashlib.blake2b(data.tobytes(), digest_size=16).digest())
+        if key == self._key:
+            self.hits += 1
+            return self._value
+        self._value = self._encode(features)
+        self._key = key
+        return self._value
+
+
 class WhisperRecognizer:
     def __init__(
         self, options: WhisperOptions | None = None, model_factory: ModelFactory | None = None
@@ -164,10 +190,26 @@ class WhisperRecognizer:
         self._model = factory(
             self.model_name, self.device, self.compute_type, str(root), self.options.cpu_threads
         )
+        if callable(getattr(self._model, "encode", None)) and hasattr(
+            self._model, "feature_extractor"
+        ):
+            self._model.encode = EncoderCache(self._model.encode)
 
     def detect_language(self, audio: np.ndarray) -> dict[str, float]:
-        _, _, all_probs = self._model.detect_language(audio)
-        return {lang: float(prob) for lang, prob in all_probs}
+        model = self._model
+        if not isinstance(getattr(model, "encode", None), EncoderCache):
+            _, _, all_probs = model.detect_language(audio)
+            return {lang: float(prob) for lang, prob in all_probs}
+        # Encode exactly the window transcribe() will decode (it drops the last feature
+        # frame), so the encoder cache serves transcribe() and the clip is encoded once.
+        from faster_whisper.audio import pad_or_trim
+
+        extractor = model.feature_extractor
+        features = extractor(audio)
+        frames = min(extractor.nb_max_frames, features.shape[-1] - 1)
+        encoded = model.encode(pad_or_trim(features[:, :frames]))
+        results = model.model.detect_language(encoded)[0]
+        return {token[2:-2]: float(prob) for token, prob in results}
 
     def transcribe(self, audio: np.ndarray, language: str) -> Transcription:
         segments, _ = self._model.transcribe(
