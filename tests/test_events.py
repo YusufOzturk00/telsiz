@@ -1,4 +1,4 @@
-"""Tests for the WebSocket/console event schema (CLAUDE.md section 4)."""
+"""Tests for the WebSocket/console event schema."""
 
 import json
 import uuid

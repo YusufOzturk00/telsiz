@@ -1,4 +1,4 @@
-# Telsiz game-term glossary (CLAUDE.md: GlossaryFilter).
+# Telsiz game-term glossary: terms kept untranslated, abbreviations expanded.
 # Applied to recognized speech before translation, in this order:
 #   1. [expand.<lang>]  abbreviations become words ("nt" -> "nice try")
 #   2. [phrases.<source>.<target>]  idioms get a fixed translation

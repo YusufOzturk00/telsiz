@@ -1,4 +1,4 @@
-"""Tests for language selection (CLAUDE.md section 7)."""
+"""Tests for language selection."""
 
 import pytest
 

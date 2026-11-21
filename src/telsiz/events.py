@@ -11,7 +11,7 @@ from typing import Any
 
 @dataclass(frozen=True)
 class VoiceEvent:
-    """One translated utterance; serializes to the schema in CLAUDE.md section 4."""
+    """One translated utterance; serializes to the WebSocket JSON schema."""
 
     source_lang: str
     source_lang_confidence: float

@@ -1,6 +1,6 @@
 """FastAPI app: the subtitle page, a WebSocket event stream and phone pairing.
 
-Security (CLAUDE.md section 8):
+Security:
 
 * By default the server listens on 127.0.0.1 only.
 * In phone mode it listens on the LAN and every request from another device

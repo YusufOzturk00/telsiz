@@ -27,7 +27,9 @@ native/**/build/
 Thumbs.db
 .DS_Store
 
-# Claude Code local tooling (not part of the project)
-.claude/skills/
-.claude/settings.local.json
+# AI assistant files (local only, not part of the project)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
 skills-lock.json
+.playwright-mcp/

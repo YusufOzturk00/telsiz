@@ -1,4 +1,4 @@
-"""Reject typical Whisper hallucinations on silence and noise (CLAUDE.md section 7)."""
+"""Reject typical Whisper hallucinations on silence and noise."""
 
 from __future__ import annotations
 

@@ -4,7 +4,7 @@ The default is normal priority. Below-normal looked friendlier to the game, but 
 CS2 sessions it starved recognition (on the GPU too: the decoding loop needs the
 CPU at every step) while the game was in front, so subtitles only arrived after
 alt-tab. The game is protected instead by capping Telsiz's CPU threads (4 by
-default). Nothing touches the game process (CLAUDE.md section 2).
+default). Nothing touches the game process.
 """
 
 from __future__ import annotations

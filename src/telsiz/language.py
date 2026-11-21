@@ -1,6 +1,6 @@
 """Spoken-language selection on top of Whisper's language probabilities.
 
-Rules (CLAUDE.md section 7):
+Rules:
 
 * Only languages from the allowed list are considered; their probabilities
   are renormalized so they sum to 1.
