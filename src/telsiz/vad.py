@@ -128,6 +128,12 @@ class UtteranceSegmenter:
         self._reset_utterance()
         return out
 
+    def discard(self) -> None:
+        """Forget the speech in progress (used when audio is skipped to catch up)."""
+        self._pending = np.zeros(0, dtype=np.float32)
+        self._preroll.clear()
+        self._reset_utterance()
+
     def _on_frame(self, frame: np.ndarray, prob: float) -> list[Utterance]:
         position = self._next_sample
         self._next_sample += len(frame)

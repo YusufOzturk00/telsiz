@@ -57,6 +57,9 @@ path = ""
 # or "idle") and uses at most this many CPU threads (0 = all) for recognition and translation.
 priority = "below_normal"
 cpu_threads = 4
+# Live mode: if processing falls more than this many seconds behind (busy graphics card,
+# slow recognition), skip the backlog so subtitles stay current. 0 = never skip.
+max_lag_s = 5.0
 
 [capture]
 # "auto" (default): listen to the game only, so music, videos and Discord on this PC are

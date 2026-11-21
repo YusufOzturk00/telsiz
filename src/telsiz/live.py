@@ -8,6 +8,10 @@ therefore delays the subtitles but never drops audio.
 End-to-end latency is measured from the end of speech (utterance end minus
 the VAD padding, mapped back to wall-clock time through the chunk stamps) to
 the moment the event is published.
+
+Subtitles that arrive long after the words were spoken are useless in a round.
+When processing falls more than ``max_lag_s`` behind (a busy GPU, a long
+recognition), the queued audio is skipped and processing resumes at live audio.
 """
 
 from __future__ import annotations
@@ -74,7 +78,7 @@ class LiveRunner:
         *,
         clock: Callable[[], float] = time.monotonic,
         retry_delay: float = 1.0,
-        backlog_warning_s: float = 10.0,
+        max_lag_s: float = 5.0,
     ) -> None:
         self._source_factory = source_factory
         self._pipeline = pipeline
@@ -82,7 +86,7 @@ class LiveRunner:
         self._publish = publish
         self._clock = clock
         self._retry_delay = retry_delay
-        self._backlog_warning_s = backlog_warning_s
+        self._max_lag_s = max_lag_s
         self._pad_s = segmenter.options.speech_pad_ms / 1000
 
         self._queue: queue.Queue[object] = queue.Queue()
@@ -92,6 +96,9 @@ class LiveRunner:
         self._threads: list[threading.Thread] = []
         self.reconnects = 0
         self.latencies: list[int] = []
+        self.skipped_s = 0.0  # audio skipped to catch up with live
+        self.non_speech_clips = 0  # clips recognized but dropped (noise, hallucinations)
+        self.non_speech_ms = 0  # time spent on those clips
 
     # --- lifecycle -------------------------------------------------------------------
 
@@ -152,30 +159,62 @@ class LiveRunner:
             if item is _STOP:
                 break
             assert isinstance(item, _Captured)
+            if self._max_lag_s > 0 and self._lag_s(item) > self._max_lag_s:
+                item = self._skip_to_live(item)
+                if item is _STOP:
+                    break
+                assert isinstance(item, _Captured)
+                self._segmenter.discard()
+                resampler = None
             chunk = item.chunk
             if resampler is None or resampler.in_rate != chunk.sample_rate:
                 resampler = Resampler(chunk.sample_rate)
             samples = resampler.process(to_mono(chunk))
             position += len(samples) / TARGET_RATE
             marks.append((position, item.at))
-            self._warn_if_behind(chunk)
             for utt in self._segmenter.feed(samples):
                 self._handle(utt, marks)
         for utt in self._segmenter.flush():
             self._handle(utt, marks)
 
-    def _warn_if_behind(self, chunk: AudioChunk) -> None:
-        backlog = self._queue.qsize() * len(chunk.samples) / chunk.sample_rate
-        if backlog > self._backlog_warning_s:
-            log.warning("Processing is %.0f s behind live audio", backlog)
+    def _lag_s(self, item: _Captured) -> float:
+        """How long ago the audio in ``item`` was captured."""
+        return self._clock() - item.at
+
+    def _skip_to_live(self, item: _Captured) -> object:
+        """Drop everything queued; return the newest chunk (or _STOP)."""
+        skipped = 0.0
+        latest: object = item
+        while True:
+            try:
+                nxt = self._queue.get_nowait()
+            except queue.Empty:
+                break
+            assert isinstance(latest, _Captured)
+            skipped += len(latest.chunk.samples) / latest.chunk.sample_rate
+            latest = nxt
+            if nxt is _STOP:
+                break
+        self.skipped_s += skipped
+        log.warning(
+            "Fell %.0f s behind live audio; skipped %.0f s so subtitles stay current",
+            self._lag_s(item),
+            skipped,
+        )
+        return latest
 
     def _handle(self, utt: Utterance, marks: deque[tuple[float, float]]) -> None:
+        started = self._clock()
         try:
             event = self._pipeline.process_utterance(utt)
         except Exception:
             log.exception("Failed to process an utterance")
             return
         if event is None:
+            spent = round((self._clock() - started) * 1000)
+            self.non_speech_clips += 1
+            self.non_speech_ms += spent
+            log.debug("%.1f s clip was not speech (%d ms)", utt.duration, spent)
             return
         speech_end = _wall_time(max(utt.end - self._pad_s, utt.start), marks)
         if speech_end is not None:

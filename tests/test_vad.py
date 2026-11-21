@@ -134,3 +134,18 @@ def test_silero_detector_scores_frames():
 
     assert probs.shape == (4,)
     assert np.all(probs < 0.5)
+
+
+def test_discard_forgets_the_speech_in_progress():
+    from telsiz.vad import UtteranceSegmenter
+
+    class Loud:
+        frame_samples = 512
+
+        def __call__(self, frames):
+            return np.ones(len(frames) // 512, dtype=np.float32)
+
+    segmenter = UtteranceSegmenter(Loud())
+    assert segmenter.feed(np.full(16000, 0.5, np.float32)) == []  # speech, not finished
+    segmenter.discard()
+    assert segmenter.flush() == []

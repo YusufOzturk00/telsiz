@@ -172,3 +172,10 @@ def test_capture_settings(tmp_path):
 def test_invalid_capture_settings_are_rejected(tmp_path, text):
     with pytest.raises(ValueError, match="capture"):
         load_config(write(tmp_path, text))
+
+
+def test_max_lag_setting(tmp_path):
+    assert load_config(None).performance.max_lag_s == 5.0
+    assert load_config(write(tmp_path, "[performance]\nmax_lag_s = 0\n")).performance.max_lag_s == 0
+    with pytest.raises(ValueError, match="max_lag_s"):
+        load_config(write(tmp_path, "[performance]\nmax_lag_s = -1\n"))

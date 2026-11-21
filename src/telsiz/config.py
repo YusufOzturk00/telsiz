@@ -39,6 +39,7 @@ class LanguageConfig:
 class PerformanceConfig:
     priority: str = "below_normal"  # normal | below_normal | idle (Telsiz's own process)
     cpu_threads: int = 4  # CPU threads for speech recognition and translation; 0 = all
+    max_lag_s: float = 5.0  # live: skip audio older than this so subtitles stay current; 0 = off
 
 
 @dataclass(frozen=True)
@@ -149,6 +150,8 @@ def validate(config: Config) -> Config:
         raise ValueError(f"performance.priority must be one of {sorted(PRIORITY_CLASSES)}")
     if config.performance.cpu_threads < 0:
         raise ValueError("performance.cpu_threads must be 0 or more")
+    if config.performance.max_lag_s < 0:
+        raise ValueError("performance.max_lag_s must be 0 or more")
     if config.capture.mode not in CAPTURE_MODES:
         raise ValueError(f"capture.mode must be one of {CAPTURE_MODES}")
     if not config.capture.process_name.strip():

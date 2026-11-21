@@ -7,9 +7,13 @@ import socket
 import sys
 import webbrowser
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from telsiz.config import Config
 from telsiz.events import VoiceEvent
+
+if TYPE_CHECKING:
+    from telsiz.live import LiveRunner
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +35,7 @@ def run_live(
 
     from telsiz.audio.capture import CaptureFactory
     from telsiz.bus import EventBus
-    from telsiz.live import LiveRunner, latency_summary
+    from telsiz.live import LiveRunner
     from telsiz.perf import set_process_priority
     from telsiz.pipeline import build_pipeline
     from telsiz.server.app import ServerSettings, create_app
@@ -60,7 +64,9 @@ def run_live(
     capture = CaptureFactory(
         config.capture.mode, config.capture.process_name, config.capture.helper_path
     )
-    runner = LiveRunner(capture, pipeline, segmenter, bus.publish)
+    runner = LiveRunner(
+        capture, pipeline, segmenter, bus.publish, max_lag_s=config.performance.max_lag_s
+    )
     server = uvicorn.Server(
         uvicorn.Config(
             create_app(bus, settings),
@@ -81,6 +87,8 @@ def run_live(
             "networks only.",
             flush=True,
         )
+    elif not phone:
+        print("To see the subtitles on your phone too, start with --phone.", flush=True)
     print(f"{capture.describe()} Press Ctrl+C to stop.", flush=True)
 
     runner.start()
@@ -88,15 +96,32 @@ def run_live(
         webbrowser.open(settings.local_url)
     try:
         server.run()
+    except KeyboardInterrupt:
+        pass  # Ctrl+C: stop quietly
     finally:
+        print("Stopping...", flush=True)
         runner.stop()
-        summary = latency_summary(runner.latencies)
-        if summary["count"]:
-            log.info(
-                "End-to-end latency over %d lines: median %d ms, p90 %d ms, max %d ms",
-                summary["count"],
-                summary["median_ms"],
-                summary["p90_ms"],
-                summary["max_ms"],
-            )
+        _log_summary(runner)
     return 0
+
+
+def _log_summary(runner: LiveRunner) -> None:
+    from telsiz.live import latency_summary
+
+    summary = latency_summary(runner.latencies)
+    if summary["count"]:
+        log.info(
+            "End-to-end latency over %d lines: median %d ms, p90 %d ms, max %d ms",
+            summary["count"],
+            summary["median_ms"],
+            summary["p90_ms"],
+            summary["max_ms"],
+        )
+    if runner.non_speech_clips:
+        log.info(
+            "%d sound clips were not speech (%.1f s spent recognizing them)",
+            runner.non_speech_clips,
+            runner.non_speech_ms / 1000,
+        )
+    if runner.skipped_s:
+        log.info("Skipped %.0f s of audio to stay live", runner.skipped_s)

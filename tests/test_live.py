@@ -1,6 +1,7 @@
 """Tests for the live runner (capture thread + processing thread)."""
 
 import threading
+import time
 
 import numpy as np
 import pytest
@@ -167,3 +168,100 @@ def _no_thread_leaks():
     before = threading.active_count()
     yield
     assert threading.active_count() <= before + 1
+
+
+# --- staying live -------------------------------------------------------------------
+
+
+class SettableClock:
+    def __init__(self):
+        self.now = 100.0
+
+    def __call__(self):
+        return self.now
+
+
+class SlowFirstPipeline(FakePipeline):
+    """The first recognition blocks until released, like a GPU busy with the game."""
+
+    def __init__(self):
+        super().__init__()
+        self.busy = threading.Event()
+        self.release = threading.Event()
+
+    def process_utterance(self, utt):
+        if not self.utterances:
+            self.busy.set()
+            assert self.release.wait(5)
+        return super().process_utterance(utt)
+
+
+def test_falls_behind_then_skips_to_live_audio(caplog):
+    clock = SettableClock()
+    pipeline = SlowFirstPipeline()
+    stopped = threading.Event()
+    runners = []
+
+    class Source:
+        def chunks(self):
+            for block in speech_then_silence():  # recognized slowly
+                yield AudioChunk(block, RATE)
+            assert pipeline.busy.wait(5)
+            for block in speech_then_silence():  # queued meanwhile: stale by the time it is read
+                yield AudioChunk(block, RATE)
+            clock.now += 20
+            pipeline.release.set()
+            deadline = time.monotonic() + 5
+            while runners[0].skipped_s == 0 and time.monotonic() < deadline:
+                time.sleep(0.01)
+            for block in speech_then_silence():  # live again
+                yield AudioChunk(block, RATE)
+            stopped.wait(5)
+
+        def stop(self):
+            stopped.set()
+
+    published = []
+    runner = LiveRunner(
+        lambda: Source(),
+        pipeline,
+        UtteranceSegmenter(LoudnessDetector()),
+        published.append,
+        clock=clock,
+        max_lag_s=5.0,
+    )
+    runners.append(runner)
+
+    run_until(runner, published, 2)
+
+    assert [e.original for e in published] == ["text 1", "text 2"]
+    assert len(pipeline.utterances) == 2  # the stale speech was never recognized
+    assert runner.skipped_s > 1.5
+    assert "skipped" in caplog.text
+
+
+class NoiseOnlyPipeline:
+    def process_utterance(self, utt):
+        return None
+
+
+def test_clips_that_are_not_speech_are_counted():
+    source = ScriptedSource(speech_then_silence())
+    published = []
+    runner = LiveRunner(
+        lambda: source,
+        NoiseOnlyPipeline(),
+        UtteranceSegmenter(LoudnessDetector()),
+        published.append,
+        clock=ManualClock(),
+    )
+
+    runner.start()
+    deadline = time.monotonic() + 5
+    while runner.non_speech_clips == 0 and time.monotonic() < deadline:
+        time.sleep(0.01)
+    runner.stop()
+
+    assert published == []
+    assert runner.non_speech_clips == 1
+    assert runner.non_speech_ms >= 0
