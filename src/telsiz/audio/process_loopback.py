@@ -161,6 +161,7 @@ class ProcessLoopbackSource:
             if self._stop.is_set():
                 return
             log.info("%s closed; waiting for it to start again", self.process_name)
+            waiting_logged = True
             if rate:
                 yield AudioChunk(np.zeros(int(rate * _TAIL_SECONDS), dtype=np.float32), rate)
 
