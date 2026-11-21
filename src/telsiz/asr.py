@@ -32,6 +32,12 @@ DEFAULT_PROMPTS: dict[str, str] = {
 }
 
 
+# faster-whisper's default retry chain: when a decode looks unsure (low average log
+# probability) or repetitive, the clip is decoded again with sampling at each
+# temperature, five candidates each time.
+FALLBACK_TEMPERATURES: tuple[float, ...] = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
+
+
 @dataclass(frozen=True)
 class Transcription:
     text: str
@@ -54,6 +60,10 @@ class WhisperOptions:
     device: str = "auto"  # auto | cuda | cpu
     compute_type: str = "auto"
     beam_size: int = 5
+    # Off: decode each clip once. In CS2 matches the retry chain re-decoded ~27 % of
+    # clips (game noise makes Whisper unsure) and took ~4.7 s instead of ~2.2 s per
+    # line, without better text.
+    temperature_fallback: bool = False
     cpu_threads: int = 4  # cap CPU use so the game keeps its cores; 0 = library default
     prompts: Mapping[str, str] = field(default_factory=lambda: dict(DEFAULT_PROMPTS))
     download_root: Path | None = None
@@ -216,6 +226,7 @@ class WhisperRecognizer:
             audio,
             language=language,
             beam_size=self.options.beam_size,
+            temperature=FALLBACK_TEMPERATURES if self.options.temperature_fallback else 0.0,
             initial_prompt=self.options.prompts.get(language),
             condition_on_previous_text=False,
             without_timestamps=True,

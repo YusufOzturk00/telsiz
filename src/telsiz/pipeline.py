@@ -126,6 +126,7 @@ def build_pipeline(config: Config) -> tuple[Pipeline, UtteranceSegmenter]:
             device=config.asr.device,
             compute_type=config.asr.compute_type,
             beam_size=config.asr.beam_size,
+            temperature_fallback=config.asr.temperature_fallback,
             cpu_threads=config.performance.cpu_threads,
             prompts={k: v for k, v in config.asr.prompts.items() if v},
         )

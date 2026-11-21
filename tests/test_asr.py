@@ -7,6 +7,7 @@ import pytest
 
 from telsiz.asr import (
     DEFAULT_PROMPTS,
+    FALLBACK_TEMPERATURES,
     WhisperOptions,
     WhisperRecognizer,
     add_nvidia_dll_dirs,
@@ -92,6 +93,25 @@ def test_transcribe_forces_language_and_uses_game_prompt_for_english():
     assert russian["language"] == "ru"
     assert russian["initial_prompt"] is None
     assert english["condition_on_previous_text"] is False
+
+
+def test_transcribe_decodes_once_by_default():
+    model = FakeModel([segment("hi")])
+    recognizer, _ = make(model)
+
+    recognizer.transcribe(AUDIO, "ru")
+
+    assert model.transcribe_calls[0]["temperature"] == 0.0
+
+
+def test_temperature_fallback_can_be_turned_back_on():
+    model = FakeModel([segment("hi")])
+    recognizer, _ = make(model, temperature_fallback=True)
+
+    recognizer.transcribe(AUDIO, "ru")
+
+    assert model.transcribe_calls[0]["temperature"] == FALLBACK_TEMPERATURES
+    assert FALLBACK_TEMPERATURES[0] == 0.0 and len(FALLBACK_TEMPERATURES) > 1
 
 
 def test_custom_prompts_override_defaults():

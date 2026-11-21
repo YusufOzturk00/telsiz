@@ -23,6 +23,7 @@ def test_defaults_without_a_file():
     assert config.allowed_source_langs == ["en", "ru", "uk", "pl", "de", "tr"]
     assert config.asr.model == "auto"
     assert config.asr.device == "auto"
+    assert config.asr.temperature_fallback is False
     assert config.language.min_confidence == 0.6
     assert config.language.min_duration_s == 1.2
     assert config.language.sticky_window_s == 30.0
@@ -49,6 +50,7 @@ same_language = "hide"
 [asr]
 model = "large-v3-turbo"
 device = "cuda"
+temperature_fallback = true
 
 [language]
 min_confidence = 0.7
@@ -66,6 +68,7 @@ max_utterance_s = 8.0
     assert config.asr.model == "large-v3-turbo"
     assert config.asr.device == "cuda"
     assert config.asr.beam_size == 5
+    assert config.asr.temperature_fallback is True
     assert config.language.min_confidence == 0.7
     assert config.vad.max_utterance_s == 8.0
     assert config.vad.speech_pad_ms == 200

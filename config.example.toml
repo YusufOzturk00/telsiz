@@ -21,6 +21,10 @@ model = "auto"
 device = "auto"
 compute_type = "auto"
 beam_size = 5
+# When a clip sounds unsure, Whisper can decode it again up to five more times.
+# Measured in CS2 matches: ~27 % of clips were retried and took ~4.7 s instead of
+# ~2.2 s, without better text. Off by default; true turns the retries back on.
+temperature_fallback = false
 
 # Extra vocabulary per language that helps Whisper hear game terms.
 # English already has a built-in list of CS2 callouts; set en = "" to turn it off.
