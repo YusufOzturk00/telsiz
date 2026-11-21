@@ -15,6 +15,9 @@ same_language = "show"
 # Or set "small", "medium" or "large-v3-turbo".
 model = "auto"
 # "auto" uses an NVIDIA GPU when the CUDA libraries are installed, otherwise the CPU.
+# Exception: while listening to the game (--live), "auto" means the CPU. During a match
+# the game keeps the graphics card so busy that recognition there took ~26 s per
+# sentence versus ~3 s on the CPU. Set "cuda" to use the graphics card anyway.
 device = "auto"
 compute_type = "auto"
 beam_size = 5
@@ -53,10 +56,27 @@ enabled = true
 path = ""
 
 [performance]
-# The game comes first: Telsiz lowers its own process priority ("normal", "below_normal"
-# or "idle") and uses at most this many CPU threads (0 = all) for recognition and translation.
-priority = "below_normal"
+# Telsiz's own process priority: "normal" (default), "below_normal" or "idle". Lower
+# priorities let a game that keeps every core busy (CS2 without an FPS cap) starve
+# recognition, even on the graphics card: subtitles then only appear after alt-tab.
+# The game is protected by the thread limit instead: at most this many CPU threads
+# (0 = all) for recognition and translation.
+priority = "normal"
 cpu_threads = 4
+# Live mode: if processing falls more than this many seconds behind (busy graphics card,
+# slow recognition), skip the backlog so subtitles stay current. 0 = never skip.
+max_lag_s = 5.0
+
+[capture]
+# "auto" (default): listen to the game only, so music, videos and Discord on this PC are
+# not translated. This uses Windows process loopback (Windows 10 2004 or newer) through
+# telsiz-loopback.exe; if that is not possible, Telsiz falls back to all PC audio and says
+# so. "system": always listen to all audio this PC plays.
+mode = "auto"
+# The program to listen to. Its child processes are included.
+process_name = "cs2.exe"
+# Leave empty to find telsiz-loopback.exe automatically.
+helper_path = ""
 
 [server]
 # Local web page for a second screen or phone: http://127.0.0.1:<port>/

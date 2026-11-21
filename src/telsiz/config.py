@@ -16,6 +16,7 @@ from telsiz.vad import SegmenterOptions
 DEVICES = ("auto", "cuda", "cpu")
 ENGINES = ("auto", "argos", "nllb")
 SAME_LANGUAGE_MODES = ("show", "hide")
+CAPTURE_MODES = ("auto", "system")
 
 
 @dataclass(frozen=True)
@@ -36,8 +37,18 @@ class LanguageConfig:
 
 @dataclass(frozen=True)
 class PerformanceConfig:
-    priority: str = "below_normal"  # normal | below_normal | idle (Telsiz's own process)
+    # Telsiz's own process: normal | below_normal | idle. Lower classes stall recognition
+    # while a game keeps every core busy, so subtitles only come after alt-tab.
+    priority: str = "normal"
     cpu_threads: int = 4  # CPU threads for speech recognition and translation; 0 = all
+    max_lag_s: float = 5.0  # live: skip audio older than this so subtitles stay current; 0 = off
+
+
+@dataclass(frozen=True)
+class CaptureConfig:
+    mode: str = "auto"  # auto: only the game if possible, else all PC audio | system
+    process_name: str = "cs2.exe"
+    helper_path: str = ""  # empty: look in the usual places for telsiz-loopback.exe
 
 
 @dataclass(frozen=True)
@@ -72,6 +83,7 @@ class Config:
     filter: FilterOptions = field(default_factory=FilterOptions)
     translate: TranslateConfig = field(default_factory=TranslateConfig)
     glossary: GlossaryConfig = field(default_factory=GlossaryConfig)
+    capture: CaptureConfig = field(default_factory=CaptureConfig)
     server: ServerConfig = field(default_factory=ServerConfig)
     performance: PerformanceConfig = field(default_factory=PerformanceConfig)
 
@@ -83,6 +95,7 @@ _SECTIONS: dict[str, type] = {
     "filter": FilterOptions,
     "translate": TranslateConfig,
     "glossary": GlossaryConfig,
+    "capture": CaptureConfig,
     "server": ServerConfig,
     "performance": PerformanceConfig,
 }
@@ -139,6 +152,12 @@ def validate(config: Config) -> Config:
         raise ValueError(f"performance.priority must be one of {sorted(PRIORITY_CLASSES)}")
     if config.performance.cpu_threads < 0:
         raise ValueError("performance.cpu_threads must be 0 or more")
+    if config.performance.max_lag_s < 0:
+        raise ValueError("performance.max_lag_s must be 0 or more")
+    if config.capture.mode not in CAPTURE_MODES:
+        raise ValueError(f"capture.mode must be one of {CAPTURE_MODES}")
+    if not config.capture.process_name.strip():
+        raise ValueError("capture.process_name must not be empty")
     if not 1024 <= config.server.port <= 65535:
         raise ValueError("server.port must be between 1024 and 65535")
     return config

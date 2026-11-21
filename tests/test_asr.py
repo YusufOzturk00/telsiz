@@ -166,3 +166,58 @@ def test_cpu_threads_are_passed_to_the_model():
     _, created = make(FakeModel(), cpu_threads=2)
 
     assert created["cpu_threads"] == 2
+
+
+# --- encode once per utterance ------------------------------------------------------
+
+
+def test_encoder_cache_reuses_the_output_for_the_same_features():
+    from telsiz.asr import EncoderCache
+
+    calls = []
+    cache = EncoderCache(lambda features: calls.append(features.shape) or len(calls))
+    a = np.ones((80, 3000), np.float32)
+
+    assert cache(a) == 1
+    assert cache(a.copy()) == 1  # same content: no second encoder run
+    assert cache(a * 2) == 2
+    assert calls == [(80, 3000), (80, 3000)]
+    assert cache.hits == 1
+
+
+class FakeExtractor:
+    nb_max_frames = 3000
+
+    def __call__(self, audio):
+        frames = len(audio) // 160 + 1
+        return np.arange(80 * frames, dtype=np.float32).reshape(80, frames)
+
+
+class EncodingModel(FakeModel):
+    """Looks like a real faster-whisper model to the encoder cache."""
+
+    def __init__(self):
+        super().__init__()
+        self.feature_extractor = FakeExtractor()
+        self.encoded = []
+        self.model = SimpleNamespace(
+            detect_language=lambda out: [[("<|ru|>", 0.9), ("<|en|>", 0.1)]]
+        )
+
+    def encode(self, features):
+        self.encoded.append(features.copy())
+        return f"encoder output {len(self.encoded)}"
+
+
+def test_language_check_encodes_the_window_transcribe_will_decode():
+    pad_or_trim = pytest.importorskip("faster_whisper.audio").pad_or_trim
+    fake = EncodingModel()
+    recognizer, _ = make(fake)
+
+    assert recognizer.detect_language(AUDIO) == {"ru": 0.9, "en": 0.1}
+
+    # transcribe() decodes features[:, :frames - 1], padded to 30 s: same bytes -> cache hit
+    features = fake.feature_extractor(AUDIO)
+    fake.encode(pad_or_trim(features[:, : features.shape[-1] - 1]))
+    assert len(fake.encoded) == 1
+    assert fake.encode.hits == 1

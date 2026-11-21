@@ -27,7 +27,7 @@ def test_defaults_without_a_file():
     assert config.language.min_duration_s == 1.2
     assert config.language.sticky_window_s == 30.0
     assert config.vad.max_utterance_s == 6.0
-    assert config.performance.priority == "below_normal"
+    assert config.performance.priority == "normal"
     assert config.performance.cpu_threads == 4
     assert config.filter.no_speech_threshold == 0.6
     assert config.same_language == "show"
@@ -152,3 +152,30 @@ def test_nllb_engine_settings(tmp_path):
 
     with pytest.raises(ValueError):
         load_config(write(tmp_path, '[translate]\nnllb_model = "nllb-54b"\n'))
+
+
+def test_capture_settings(tmp_path):
+    config = load_config(
+        write(
+            tmp_path,
+            '[capture]\nmode = "system"\nprocess_name = "vlc.exe"\nhelper_path = "C:/x.exe"\n',
+        )
+    )
+
+    assert config.capture.mode == "system"
+    assert config.capture.process_name == "vlc.exe"
+    assert config.capture.helper_path == "C:/x.exe"
+    assert load_config(None).capture.mode == "auto"
+
+
+@pytest.mark.parametrize("text", ['[capture]\nmode = "game"\n', '[capture]\nprocess_name = " "\n'])
+def test_invalid_capture_settings_are_rejected(tmp_path, text):
+    with pytest.raises(ValueError, match="capture"):
+        load_config(write(tmp_path, text))
+
+
+def test_max_lag_setting(tmp_path):
+    assert load_config(None).performance.max_lag_s == 5.0
+    assert load_config(write(tmp_path, "[performance]\nmax_lag_s = 0\n")).performance.max_lag_s == 0
+    with pytest.raises(ValueError, match="max_lag_s"):
+        load_config(write(tmp_path, "[performance]\nmax_lag_s = -1\n"))

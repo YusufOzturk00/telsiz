@@ -187,3 +187,30 @@ def test_phone_requires_live(capsys):
 
     assert exc_info.value.code == 2
     assert "--live" in capsys.readouterr().err
+
+
+def test_live_capture_options():
+    live = FakeLive()
+
+    main(["--live", "--capture", "system", "--app", "vlc.exe"], run_live=live)
+
+    [call] = live.calls
+    assert call["config"].capture.mode == "system"
+    assert call["config"].capture.process_name == "vlc.exe"
+
+
+def test_live_listens_to_the_game_by_default():
+    live = FakeLive()
+
+    main(["--live"], run_live=live)
+
+    [call] = live.calls
+    assert call["config"].capture.mode == "auto"
+    assert call["config"].capture.process_name == "cs2.exe"
+
+
+@pytest.mark.parametrize("flag", [["--capture", "system"], ["--app", "vlc.exe"]])
+def test_capture_options_require_live(flag, capsys):
+    with pytest.raises(SystemExit):
+        main(flag, run_live=FakeLive())
+    assert "--live" in capsys.readouterr().err
