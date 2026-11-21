@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import dataclasses
 import logging
 import sys
@@ -161,6 +162,57 @@ def main(
         )
         return 1
     return 0
+
+
+def _console_is_ours() -> bool:
+    """True when this process has a console window of its own (started by double-click)."""
+    if sys.platform != "win32":
+        return False
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32")
+    kernel32.GetConsoleProcessList.argtypes = [ctypes.POINTER(wintypes.DWORD), wintypes.DWORD]
+    kernel32.GetConsoleProcessList.restype = wintypes.DWORD
+    processes = (wintypes.DWORD * 4)()
+    return kernel32.GetConsoleProcessList(processes, 4) == 1
+
+
+def packaged_main(
+    argv: Sequence[str] | None = None,
+    *,
+    app_dir: Path | None = None,
+    owns_console: bool | None = None,
+    wait: Callable[[str], object] = input,
+    run_file: FileRunner | None = None,
+    run_live: LiveRunnerFn | None = None,
+) -> int:
+    """Entry point of the packaged ``Telsiz.exe``.
+
+    A double-click (no arguments) starts listening with the page on this PC; the phone
+    (local network) stays opt-in. ``config.toml`` next to the exe is used if present.
+    A window opened just for Telsiz waits for Enter before closing, so messages stay
+    readable.
+    """
+    args = list(sys.argv[1:] if argv is None else argv)
+    if not args:
+        args = ["--live"]
+    folder = app_dir if app_dir is not None else Path(sys.executable).parent
+    local_config = folder / "config.toml"
+    if local_config.is_file() and not any(a.startswith("--config") for a in args):
+        args += ["--config", str(local_config)]
+    try:
+        code = main(args, run_file=run_file, run_live=run_live)
+    except SystemExit as exc:  # --help, --version, a usage error
+        code = exc.code if isinstance(exc.code, int) else (0 if exc.code is None else 1)
+    except KeyboardInterrupt:
+        code = 0
+    if owns_console is None:
+        owns_console = _console_is_ours()
+    if owns_console:
+        with contextlib.suppress(EOFError, KeyboardInterrupt):
+            wait("\nPress Enter to close this window.")
+    return code
 
 
 if __name__ == "__main__":

@@ -29,6 +29,17 @@ def test_version_prints_package_version(capsys):
     assert capsys.readouterr().out.strip() == f"telsiz {telsiz.__version__}"
 
 
+def test_package_version_matches_pyproject():
+    # The release workflow names the zip after this version and checks the git tag.
+    import tomllib
+    from pathlib import Path
+
+    pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    declared = tomllib.loads(pyproject.read_text(encoding="utf-8"))["project"]["version"]
+
+    assert telsiz.__version__ == declared
+
+
 def test_no_arguments_prints_usage_and_returns_zero(capsys):
     assert main([]) == 0
     assert "usage: telsiz" in capsys.readouterr().out
@@ -168,6 +179,64 @@ def test_live_options(capsys):
     assert call["open_browser"] is False
     assert call["config"].server.port == 9000
     assert json.loads(capsys.readouterr().out.splitlines()[0])["type"] == "voice"
+
+
+# --- packaged Telsiz.exe ------------------------------------------------------------
+
+
+def run_packaged(argv, tmp_path, **kwargs):
+    from telsiz.__main__ import packaged_main
+
+    live = kwargs.pop("live", FakeLive())
+    kwargs.setdefault("owns_console", False)
+    code = packaged_main(argv, app_dir=tmp_path, run_live=live, **kwargs)
+    return code, live
+
+
+def test_double_clicking_the_packaged_app_starts_listening(tmp_path):
+    code, live = run_packaged([], tmp_path)
+
+    assert code == 0
+    [call] = live.calls
+    assert call["phone"] is False  # the phone (LAN) stays opt-in
+    assert call["open_browser"] is True
+
+
+def test_packaged_app_reads_config_toml_next_to_the_exe(tmp_path):
+    (tmp_path / "config.toml").write_text('target_lang = "de"\n', encoding="utf-8")
+
+    _, live = run_packaged(["--live", "--phone"], tmp_path)
+
+    [call] = live.calls
+    assert call["config"].target_lang == "de"
+    assert call["phone"] is True
+
+
+def test_packaged_app_prefers_an_explicit_config(tmp_path):
+    (tmp_path / "config.toml").write_text('target_lang = "de"\n', encoding="utf-8")
+    other = tmp_path / "other.toml"
+    other.write_text('target_lang = "pl"\n', encoding="utf-8")
+
+    _, live = run_packaged(["--live", "--config", str(other)], tmp_path)
+
+    assert live.calls[0]["config"].target_lang == "pl"
+
+
+def test_packaged_app_keeps_its_own_window_open_until_enter(tmp_path):
+    prompts = []
+
+    code, _ = run_packaged([], tmp_path, owns_console=True, wait=prompts.append)
+
+    assert code == 0
+    assert len(prompts) == 1 and "Enter" in prompts[0]
+
+
+def test_packaged_app_help_returns_instead_of_exiting(tmp_path, capsys):
+    code, live = run_packaged(["--help"], tmp_path)
+
+    assert code == 0
+    assert live.calls == []
+    assert "usage: telsiz" in capsys.readouterr().out
 
 
 def test_live_exit_code_is_passed_through():

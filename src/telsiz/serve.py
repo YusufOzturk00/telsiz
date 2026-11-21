@@ -107,7 +107,12 @@ def run_live(
             flush=True,
         )
     elif not phone:
-        print("To see the subtitles on your phone too, start with --phone.", flush=True)
+        how = (
+            "start 'Telsiz - Telefon' in the Telsiz folder"
+            if getattr(sys, "frozen", False)
+            else "start with --phone"
+        )
+        print(f"To see the subtitles on your phone too, {how}.", flush=True)
     print(f"{capture.describe()} Press Ctrl+C to stop.", flush=True)
 
     runner.start()

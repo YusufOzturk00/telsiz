@@ -1,0 +1,41 @@
+name: Release
+
+# Push a tag like v1.0.0 (matching the version in pyproject.toml) to publish the
+# Windows package as a GitHub Release.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    uses: ./.github/workflows/package.yml
+
+  publish:
+    name: Publish release
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: telsiz-windows-x64
+          path: dist
+      - name: Check the tag matches the package version
+        run: |
+          zip="dist/Telsiz-${GITHUB_REF_NAME#v}-windows-x64.zip"
+          if [ ! -f "$zip" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match the package: $(ls dist)" >&2
+            exit 1
+          fi
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "dist/Telsiz-${GITHUB_REF_NAME#v}-windows-x64.zip" \
+            --title "Telsiz $GITHUB_REF_NAME" --notes-file packaging/RELEASE_NOTES.md
