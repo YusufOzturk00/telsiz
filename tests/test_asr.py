@@ -205,6 +205,72 @@ def test_encoder_cache_reuses_the_output_for_the_same_features():
     assert cache.hits == 1
 
 
+def padded(content_frames: int, total: int = 3000) -> np.ndarray:
+    """Features like faster-whisper's: real frames, then zeros up to 30 s."""
+    features = np.zeros((80, total), np.float32)
+    features[:, :content_frames] = 1.0
+    return features
+
+
+def test_encoder_window_drops_most_of_the_30_s_padding():
+    from telsiz.asr import EncoderCache
+
+    seen = []
+    cache = EncoderCache(lambda f: seen.append(f.shape) or "out", window_frames=1000)
+
+    cache(padded(250))  # a 2.5 s clip
+
+    assert seen == [(80, 1000)]
+
+
+def test_encoder_window_never_cuts_speech():
+    from telsiz.asr import EncoderCache
+
+    seen = []
+    cache = EncoderCache(lambda f: seen.append(f.shape) or "out", window_frames=1000)
+
+    cache(padded(1234))  # longer than the window: keep it, rounded up to 1 s
+
+    assert seen == [(80, 1300)]
+
+
+def test_encoder_without_a_window_sees_the_full_30_s():
+    from telsiz.asr import EncoderCache
+
+    seen = []
+    cache = EncoderCache(lambda f: seen.append(f.shape) or "out")
+
+    cache(padded(250))
+
+    assert seen == [(80, 3000)]
+
+
+@pytest.mark.parametrize(
+    ("model", "device", "window_s", "expected"),
+    [
+        ("small", "cpu", 0.0, 10.0),  # measured: same accuracy as 30 s, 4x faster
+        ("large-v3-turbo", "cpu", 0.0, 15.0),  # measured: same accuracy as 30 s, 3x faster
+        ("medium", "cpu", 0.0, 30.0),  # not measured: keep Whisper's own window
+        ("small", "cuda", 0.0, 30.0),  # the GPU is fast enough for the full window
+        ("small", "cpu", 12.0, 12.0),  # set by the user
+    ],
+)
+def test_encoder_window_by_model_and_device(model, device, window_s, expected):
+    from telsiz.asr import resolve_window
+
+    assert resolve_window(window_s, model, device) == expected
+
+
+def test_recognizer_encodes_a_10_s_window_for_small_on_the_cpu():
+    fake = EncodingModel()
+    recognizer, _ = make(fake)  # device cpu, model auto -> small
+
+    pytest.importorskip("faster_whisper")
+    recognizer.detect_language(AUDIO)
+
+    assert fake.encoded[0].shape == (80, 1000)
+
+
 class FakeExtractor:
     nb_max_frames = 3000
 

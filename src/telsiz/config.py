@@ -26,6 +26,7 @@ class AsrConfig:
     compute_type: str = "auto"
     beam_size: int = 5
     temperature_fallback: bool = False  # decode unsure clips again (slower; see asr.py)
+    window_s: float = 0.0  # Whisper encoder window in seconds; 0 = by model (see asr.py)
     prompts: dict[str, str] = field(default_factory=lambda: dict(DEFAULT_PROMPTS))
 
 
@@ -149,6 +150,10 @@ def validate(config: Config) -> Config:
     ):
         if device not in DEVICES:
             raise ValueError(f"{name} must be one of {DEVICES}")
+    if config.asr.window_s != 0 and not 5 <= config.asr.window_s <= 30:
+        raise ValueError("asr.window_s must be 0 (automatic) or between 5 and 30 seconds")
+    if not 0 < config.vad.continue_threshold <= config.vad.threshold <= 1:
+        raise ValueError("vad thresholds must satisfy 0 < continue_threshold <= threshold <= 1")
     if config.performance.priority not in PRIORITY_CLASSES:
         raise ValueError(f"performance.priority must be one of {sorted(PRIORITY_CLASSES)}")
     if config.performance.cpu_threads < 0:

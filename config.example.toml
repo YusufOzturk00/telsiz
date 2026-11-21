@@ -25,6 +25,10 @@ beam_size = 5
 # Measured in CS2 matches: ~27 % of clips were retried and took ~4.7 s instead of
 # ~2.2 s, without better text. Off by default; true turns the retries back on.
 temperature_fallback = false
+# Seconds of audio Whisper's encoder looks at per clip. 0 = automatic: on the CPU 10 s
+# for "small" and 15 s for "large-v3-turbo" (same accuracy as the full 30 s, 3-4x
+# faster, measured); the full 30 s for other models and on a GPU. Or set 5-30.
+window_s = 0.0
 
 # Extra vocabulary per language that helps Whisper hear game terms.
 # English already has a built-in list of CS2 callouts; set en = "" to turn it off.
@@ -39,7 +43,11 @@ min_duration_s = 1.2
 sticky_window_s = 30.0
 
 [vad]
+# A frame at least `threshold` likely to be speech starts an utterance; after that,
+# frames down to `continue_threshold` still count as speech. Teammates' voices often
+# score 0.3-0.5 under game sound, while game sound alone rarely reaches 0.5.
 threshold = 0.5
+continue_threshold = 0.35
 min_silence_ms = 500
 speech_pad_ms = 200
 min_speech_ms = 250

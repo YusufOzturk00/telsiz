@@ -24,6 +24,9 @@ def test_defaults_without_a_file():
     assert config.asr.model == "auto"
     assert config.asr.device == "auto"
     assert config.asr.temperature_fallback is False
+    assert config.asr.window_s == 0.0
+    assert config.vad.threshold == 0.5
+    assert config.vad.continue_threshold == 0.35
     assert config.language.min_confidence == 0.6
     assert config.language.min_duration_s == 1.2
     assert config.language.sticky_window_s == 30.0
@@ -97,6 +100,10 @@ def test_unknown_keys_are_reported(tmp_path):
         '[translate]\nengine = "google"',
         "allowed_source_langs = []",
         '[asr]\ndevice = "tpu"',
+        "[asr]\nwindow_s = 3.0",
+        "[asr]\nwindow_s = 45.0",
+        "[vad]\ncontinue_threshold = 0.6",
+        "[vad]\ncontinue_threshold = 0.0",
     ],
 )
 def test_invalid_values_are_rejected(tmp_path, text):

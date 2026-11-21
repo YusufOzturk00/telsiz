@@ -50,16 +50,17 @@ class Utterance:
 
 @dataclass(frozen=True)
 class SegmenterOptions:
-    threshold: float = 0.5
+    threshold: float = 0.5  # a frame at least this likely to be speech starts an utterance
+    # Once an utterance has started, frames at or above this count as speech, frames
+    # below it as silence. In CS2 a teammate's voice often scores 0.3-0.5 under game
+    # sound, so with Silero's usual rule (speech >= 0.5, silence < 0.35, nothing in
+    # between) most calls were cut short or dropped as too short. Game sound alone
+    # stayed under 0.5 in 99 % of seconds of a bot match, so starting stays at 0.5.
+    continue_threshold: float = 0.35
     min_silence_ms: int = 500
     speech_pad_ms: int = 200
     min_speech_ms: int = 250
     max_utterance_s: float = 6.0  # long speech shows up sooner; split at a quiet moment
-
-    @property
-    def neg_threshold(self) -> float:
-        """Below this a frame counts as silence (hysteresis, as in Silero's own helper)."""
-        return max(self.threshold - 0.15, 0.01)
 
 
 class UtteranceSegmenter:
@@ -152,9 +153,9 @@ class UtteranceSegmenter:
 
         self._frames.append(frame)
         self._probs.append(prob)
-        if prob >= opts.threshold:
+        if prob >= opts.continue_threshold:
             self._silence_run = 0
-        elif prob < opts.neg_threshold:
+        else:
             self._silence_run += 1
 
         if self._silence_run >= self._min_silence_frames:
@@ -174,7 +175,7 @@ class UtteranceSegmenter:
         window_start = int(len(probs) * 0.7)
         smoothed = np.convolve(probs, np.ones(3) / 3, mode="same")
         dip = window_start + int(np.argmin(smoothed[window_start:]))
-        cut = dip if smoothed[dip] < self._opts.threshold else len(self._frames)
+        cut = dip if smoothed[dip] < self._opts.continue_threshold else len(self._frames)
 
         out = self._emit(cut)
         rest_frames, rest_probs = self._frames[cut:], self._probs[cut:]
@@ -187,7 +188,7 @@ class UtteranceSegmenter:
 
     def _emit(self, keep: int) -> list[Utterance]:
         frames = self._frames[:keep]
-        voiced = sum(p >= self._opts.threshold for p in self._probs[:keep])
+        voiced = sum(p >= self._opts.continue_threshold for p in self._probs[:keep])
         if not frames or voiced < self._min_speech_frames:
             return []
         audio = np.concatenate(frames)
