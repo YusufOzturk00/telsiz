@@ -27,7 +27,7 @@ def test_defaults_without_a_file():
     assert config.language.min_duration_s == 1.2
     assert config.language.sticky_window_s == 30.0
     assert config.vad.max_utterance_s == 6.0
-    assert config.performance.priority == "below_normal"
+    assert config.performance.priority == "normal"
     assert config.performance.cpu_threads == 4
     assert config.filter.no_speech_threshold == 0.6
     assert config.same_language == "show"

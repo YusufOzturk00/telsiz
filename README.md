@@ -58,7 +58,7 @@ Bilmen gerekenler:
 - Ses diske yazılmaz ve bilgisayarından dışarı çıkmaz. Çeviri yereldir; telefon modu yalnızca yerel ağda çalışır.
 - Konsolda her satır için uçtan uca gecikme yazılır (konuşma bitişinden ekrana).
 - **Hep canlı kalır:** Ekran kartı oyunla meşgul olduğu için Telsiz 5 saniyeden fazla geride kalırsa birikmiş sesi atlar ve canlı sese döner; geç gelen bir uyarı oyunda işe yaramaz. Bu süre `config.toml` içinde `[performance]` bölümündeki `max_lag_s` ile değiştirilebilir (`0` = hiç atlama). Kapanışta kaç saniyenin atlandığı ve konuşma olmayan kaç ses parçasının (silah, adım sesi) elendiği yazılır.
-- **Oyun önce gelir:** Telsiz kendi işlem önceliğini düşürür ve en fazla 4 işlemci çekirdeği kullanır. Kimse konuşmazken neredeyse hiç kaynak kullanmaz.
+- **Oyun önce gelir:** Telsiz en fazla 4 işlemci çekirdeği kullanır ve kimse konuşmazken neredeyse hiç kaynak kullanmaz. İşlem önceliği bilerek normal bırakılır: düşük öncelikte, CS2 bütün çekirdekleri kullanırken konuşma tanıma takılıyor ve çeviriler ancak alt-tab yapınca geliyordu (ekran kartı kullanılırken bile).
 - **Donanıma göre otomatik ayar:** Telsiz açılırken bilgisayarını tanır ve neyi neden seçtiğini konsola yazar.
   - **Konuşmayı yazıya çevirme:** NVIDIA ekran kartı varsa ekran kartında `large-v3-turbo` (daha isabetli), yoksa işlemcide `small` çalışır. AMD ve Intel ekran kartları bu hızlandırmayı (CUDA) desteklemediği için işlemci kullanılır.
   - **Çeviri:** Kurulu RAM'e göre seçilir: 24 GB ve üstü **NLLB-200 1.3B** (en iyi kalite), 12–16 GB **NLLB-200 600M**, daha azı **Argos Translate** (en hafif). Çeviri her zaman işlemcide çalışır; ekran kartı oyuna kalır. NLLB indirilemez ya da yüklenemezse Argos'a geçilir.
@@ -184,7 +184,7 @@ Things to know:
 - Audio is never written to disk and never leaves your PC. Translation is local; phone mode only works on the local network.
 - The console shows the end-to-end latency of every line (from the end of speech to the screen).
 - **Always live:** if Telsiz falls more than 5 seconds behind because the graphics card is busy with the game, it skips the backlog and returns to live audio; a late warning is useless in a game. Change this with `max_lag_s` in the `[performance]` section of `config.toml` (`0` = never skip). On exit it reports how many seconds were skipped and how many sound clips that were not speech (gunfire, footsteps) were dropped.
-- **The game comes first:** Telsiz lowers its own process priority and uses at most 4 CPU cores. While nobody speaks it uses almost no resources.
+- **The game comes first:** Telsiz uses at most 4 CPU cores and almost no resources while nobody speaks. Its process priority is deliberately left at normal: at a lower priority, speech recognition stalled while CS2 used every core, and translations only arrived after alt-tab (even with the graphics card).
 - **Automatic settings for your hardware:** At startup Telsiz looks at your PC and writes what it chose and why to the console.
   - **Speech recognition:** With an NVIDIA graphics card, `large-v3-turbo` (more accurate) runs on the card; otherwise `small` runs on the processor. AMD and Intel graphics cards do not support this acceleration (CUDA), so the processor is used.
   - **Translation:** Chosen by installed RAM: 24 GB or more **NLLB-200 1.3B** (best quality), 12–16 GB **NLLB-200 600M**, less **Argos Translate** (lightest). Translation always runs on the processor; the graphics card is left to the game. If NLLB cannot be downloaded or loaded, Argos is used.

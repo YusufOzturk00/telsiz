@@ -37,7 +37,9 @@ class LanguageConfig:
 
 @dataclass(frozen=True)
 class PerformanceConfig:
-    priority: str = "below_normal"  # normal | below_normal | idle (Telsiz's own process)
+    # Telsiz's own process: normal | below_normal | idle. Lower classes stall recognition
+    # while a game keeps every core busy, so subtitles only come after alt-tab.
+    priority: str = "normal"
     cpu_threads: int = 4  # CPU threads for speech recognition and translation; 0 = all
     max_lag_s: float = 5.0  # live: skip audio older than this so subtitles stay current; 0 = off
 

@@ -234,7 +234,7 @@ Her kilometre taşı ayrı bir branch/PR olarak ilerlesin. Bir kilometre taşın
 - Gerçek oyuncu ses kayıtlarını repoya koyma. Test sesleri CC0/kamu malı kaynaklardan (ör. Mozilla Common Voice CC0) gelsin ve kaynakları `tests/fixtures/SOURCES.md`'de listelensin.
 - Bölüm 2'deki kırmızı çizgilere değen herhangi bir öneri, kütüphane veya kod parçası görürsen **uygulama, bana sor.**
 - Küçük ve anlamlı commit'ler at; commit mesajları İngilizce olsun.
-- **Oyun performansı önce gelir:** Telsiz oyunun FPS'ini düşürmemeli. Telsiz kendi işlem önceliğini düşürür (`below_normal`), CPU iş parçacıklarını sınırlar (varsayılan 4) ve RAM'e göre hafif modeller seçer. Yeni bir özellik CPU, GPU veya RAM yükünü artırıyorsa önce ölç, sonra varsayılan yap. Ağır işleri (ör. çeviri) GPU'ya ancak ölçüm GPU'nun daha iyi olduğunu gösterirse taşı.
+- **Oyun performansı önce gelir:** Telsiz oyunun FPS'ini düşürmemeli. Telsiz CPU iş parçacıklarını sınırlar (varsayılan 4) ve RAM'e göre hafif modeller seçer. İşlem önceliği `normal` kalır: `below_normal`, CS2 sırasında tanımayı (GPU'da bile) aç bırakıyor ve çeviriler ancak alt-tab'da geliyordu. Yeni bir özellik CPU, GPU veya RAM yükünü artırıyorsa önce ölç, sonra varsayılan yap. Ağır işleri (ör. çeviri) GPU'ya ancak ölçüm GPU'nun daha iyi olduğunu gösterirse taşı.
 
 ---
 
