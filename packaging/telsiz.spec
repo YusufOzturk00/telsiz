@@ -31,7 +31,8 @@ analysis = Analysis(  # noqa: F821
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
-    excludes=["tkinter", "pytest", "IPython", "matplotlib", "telsiz.quality"],
+    # Test tools reach the build only through numpy/scipy test helpers.
+    excludes=["tkinter", "pytest", "_pytest", "py", "IPython", "matplotlib", "telsiz.quality"],
     noarchive=False,
 )
 

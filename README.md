@@ -23,57 +23,59 @@ Telsiz çeviriyi oyunun üstünde göstermez; oyun ekranına hiçbir şey çizil
 
 Telsiz yalnızca sesli sohbetle ilgilenir; yazılı sohbeti çevirmez.
 
-### Durum
+<p>
+  <img src="docs/images/web-page.png" alt="Bilgisayardaki çeviri sayfası" width="560">
+  <img src="docs/images/phone.png" alt="Telefondaki çeviri sayfası" width="195">
+</p>
 
-🚧 **Erken geliştirme aşamasında.** Şu an **yalnızca CS2'nin sesini** canlı olarak dinleyip konuşmaları Türkçeye çevirebiliyor ve çeviriyi tarayıcıda (ikinci ekran) ve telefonda gösterebiliyor (M3). Kullanılabilir bir sürüm yayınlandığında kurulum adımları burada olacak.
+### Kurulum
 
-Geliştiriciler şöyle deneyebilir (ilk çalıştırma modelleri indirir):
+1. [Releases](https://github.com/YusufOzturk00/telsiz/releases) sayfasından `Telsiz-…-windows-x64.zip` dosyasını indir ve bir klasöre çıkar.
+2. **Telsiz.exe**'ye çift tıkla. CS2'yi dinlemeye başlar ve çeviriler bu bilgisayarın tarayıcısında açılır. CS2 kapalıysa açılmasını bekler.
+3. Telefonda görmek için onun yerine **Telsiz - Telefon**'u çalıştır ve konsoldaki QR kodu okut. Telefon aynı Wi‑Fi ağında olmalı. Windows, Telsiz'in ağı kullanmasına izin isteyebilir: yalnızca **özel ağlar** için izin ver.
 
-```powershell
-pip install -e ".[all]"
-python -m telsiz --live
-```
+- İlk açılışta modeller bir kez indirilir: bilgisayarının RAM'ine göre ~1–2 GB. Sonraki açılışlar birkaç saniye sürer.
+- Program imzalı olmadığı için Windows "Bilgisayarınız korundu" uyarısı verebilir: **Ek bilgi → Yine de çalıştır**.
+- Kapatmak için konsolda **Ctrl+C**'ye bas.
+- Ayarları değiştirmek için `config.example.toml` dosyasını aynı klasörde `config.toml` adıyla kopyalayıp düzenle; dosyadaki açıklamalar her ayarı anlatır.
 
-Tarayıcıda `http://127.0.0.1:8765/` açılır ve çeviriler orada akar. Telefonda da görmek için:
+### Bilmen gerekenler
 
-```powershell
-python -m telsiz --live --phone
-```
-
-Konsolda bir QR kod ve bağlantı çıkar; telefon aynı Wi‑Fi ağında olmalı. Bağlantıda bu oturuma özel rastgele bir erişim anahtarı vardır; anahtarı olmayan cihazlar reddedilir. Windows ilk seferde Python'un ağı kullanmasına izin isteyebilir: yalnızca **özel ağlar** için izin ver.
-
-**Yalnızca oyunun sesi:** Telsiz yalnızca `cs2.exe`'nin sesini dinler; arka planda çalan müzik, videolar ve Discord çevrilmez. Bunun için `telsiz-loopback.exe` adlı küçük bir yardımcı program gerekir. Bu program açık kaynak kodundan ([native/process_loopback](native/process_loopback)) GitHub Actions'ta derlenir; repoda hazır exe tutulmaz. Kaynak koddan çalıştırırken son derlenmiş halini şöyle indirebilirsin ([GitHub CLI](https://cli.github.com/) gerekir):
-
-```powershell
-$run = gh run list --repo YusufOzturk00/telsiz --workflow ci.yml --branch main --status success -L 1 --json databaseId -q ".[0].databaseId"
-```
-
-```powershell
-gh run download $run --repo YusufOzturk00/telsiz -n telsiz-loopback -D native/process_loopback/build/Release
-```
-
-Ya da kendin derle (bkz. [native/process_loopback/README.md](native/process_loopback/README.md)). Oyun kapalıysa Telsiz açılmasını bekler; oyun kapanıp yeniden açılınca kendiliğinden yeniden bağlanır. Yardımcı program bulunamazsa ya da Windows sürümün bunu desteklemiyorsa Telsiz bunu konsolda söyler ve bilgisayarda çalan **bütün sesi** dinlemeye geçer. Bütün sesi kendin seçmek için `--capture system`, başka bir programla denemek için `--app` kullan (ör. tarayıcıda Rusça bir video açıp `python -m telsiz --live --app chrome.exe`).
-
-Bilmen gerekenler:
-
-- Ses diske yazılmaz ve bilgisayarından dışarı çıkmaz. Çeviri yereldir; telefon modu yalnızca yerel ağda çalışır.
-- Konsolda her satır için uçtan uca gecikme yazılır (konuşma bitişinden ekrana).
 - **Ekran modu:** Çeviriler en tutarlı **Tam Ekran Pencereli** modda geldi. **Tam Ekran** modunda testlerimizde tutarsız çalıştı (bazı oturumlarda çeviriler çok seyrek geldi); bu yüzden **Tam Ekran Pencereli** öneriyoruz.
 - **Alt-tab:** CS2 arka plana alınınca kendi sesini kapatır. Çevrilecek ses olmadığı için alt-tab yaptığında çeviri gelmez; oyuna dönünce devam eder.
-- **Hız:** Bir satır, konuşma bittikten genellikle 2,5–3 saniye sonra gelir. Whisper emin olamadığı bir cümleyi normalde 5 kez daha baştan çözmeyi dener; oyun gürültüsünde bu, satırların ~%27'sinde oluyordu ve o satırlar ~2,2 yerine ~4,7 saniyede geliyordu. Test kayıtlarında metin iyileşmediği için Telsiz her cümleyi bir kez çözer. Tekrar denemeleri geri açmak için `config.toml` içinde `[asr]` bölümüne `temperature_fallback = true` yaz.
-- **Hep canlı kalır:** Ekran kartı oyunla meşgul olduğu için Telsiz 5 saniyeden fazla geride kalırsa birikmiş sesi atlar ve canlı sese döner; geç gelen bir uyarı oyunda işe yaramaz. Bu süre `config.toml` içinde `[performance]` bölümündeki `max_lag_s` ile değiştirilebilir (`0` = hiç atlama). Kapanışta kaç saniyenin atlandığı ve konuşma olmayan kaç ses parçasının (silah, adım sesi) elendiği yazılır.
-- **Oyun önce gelir:** Telsiz en fazla 4 işlemci çekirdeği kullanır ve kimse konuşmazken neredeyse hiç kaynak kullanmaz. İşlem önceliği bilerek normal bırakılır: düşük öncelikte, CS2 bütün çekirdekleri kullanırken konuşma tanıma takılıyor ve çeviriler ancak alt-tab yapınca geliyordu (ekran kartı kullanılırken bile).
-- **Donanıma göre otomatik ayar:** Telsiz açılırken bilgisayarını tanır ve neyi neden seçtiğini konsola yazar.
-  - **Konuşmayı yazıya çevirme:** NVIDIA ekran kartı varsa ekran kartında `large-v3-turbo` (daha isabetli), yoksa işlemcide `small` çalışır. AMD ve Intel ekran kartları bu hızlandırmayı (CUDA) desteklemediği için işlemci kullanılır.
-  - **Oyunu dinlerken tanıma işlemcide yapılır:** Maç sırasında CS2 ekran kartını o kadar doldurur ki, ekran kartında 4 saniyelik bir cümlenin tanınması ~26 saniye sürdü; Telsiz'e öncelik vermek de fark etmedi ve tanıma ancak alt-tab yapınca bitti. İşlemcide aynı cümle oyun öndeyken ~3 saniye sürdü (ölçüm: RTX 4060, Ryzen 5 7500F, Windows Oyun Modu açık). Bu yüzden Telsiz CS2'yi dinlerken tanımayı işlemcide `small` modeliyle yapar ve oyuna ekran kartı belleği bırakır. Ekran kartını yine de kullanmak için `--device cuda` ver.
-  - **Çeviri:** Kurulu RAM'e göre seçilir: 24 GB ve üstü **NLLB-200 1.3B** (en iyi kalite), 12–16 GB **NLLB-200 600M**, daha azı **Argos Translate** (en hafif). Çeviri her zaman işlemcide çalışır; ekran kartı oyuna kalır. NLLB indirilemez ya da yüklenemezse Argos'a geçilir.
-  - **Kaynak kullanımı (yaklaşık):** NLLB-1.3B ~1.6 GB RAM, NLLB-600M ~0.8 GB, Argos ~0.4 GB; konuşmayı yazıya çevirme ekran kartında ~1.2 GB ekran kartı belleği kullanır.
-  - **İndirilenler (ilk kullanımda bir kez):** NVIDIA ve 32 GB RAM'li bir bilgisayarda toplam ~4.4 GB, NVIDIA ve 16 GB RAM'de ~3.7 GB, AMD/Intel ekran kartı ve 16 GB RAM'de ~1.3 GB.
-  - **Elle seçmek için:** `config.toml` içinde `[translate]` bölümüne `engine = "nllb"` veya `engine = "argos"`, `[asr]` bölümüne `device = "cpu"` (ekran kartını hiç kullanmaz) yaz.
-- **NLLB lisansı:** NLLB-200 model ağırlıklarının lisansı **CC-BY-NC-4.0**'dır, yani yalnızca ticari olmayan kullanıma izin verir. Telsiz'in kodu MIT lisanslıdır; NLLB modeli Telsiz ile dağıtılmaz, ilk kullanımda indirilir. NLLB Rusça ve Ukraynacayı İngilizceye uğramadan doğrudan Türkçeye çevirir.
-- Bir ses dosyasını çevirmek için: `python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr`
+- **Yalnızca oyunun sesi:** Telsiz yalnızca `cs2.exe`'nin sesini dinler; arka planda çalan müzik, videolar ve Discord çevrilmez. Bunu `telsiz-loopback.exe` adlı küçük yardımcı program yapar. Windows sürümün bunu desteklemiyorsa Telsiz bunu konsolda söyler ve bilgisayarda çalan **bütün sesi** dinlemeye geçer.
+- **Hız:** Bir satır, konuşma bittikten genellikle ~2 saniye sonra gelir (önceki sürümde ~3 saniye). Whisper her ses parçasını 30 saniyelik bir pencereye tamamlıyordu; parçalar en fazla birkaç saniye olduğu için Telsiz artık 10 saniyelik pencere kullanır. Aynı isabette tanıma 4 kat hızlandı. Whisper emin olamadığı bir cümleyi 5 kez daha baştan çözmeyi denerdi; oyunda bu satırların ~%27'sinde oluyor ve onları ~4,7 saniyeye çıkarıyordu. Metin iyileşmediği için Telsiz her cümleyi bir kez çözer.
+- **Oyun sesinde konuşmayı yakalama:** Bir takım arkadaşının sesi net başlar, sonra oyun sesinin altında kalır. Telsiz bir konuşmayı yine net bir sesle başlatır, ama sonrasında zayıflayan kısmı da konuşma sayar; eskiden bu cümlelerin çoğu yarıda kesiliyor ya da tamamen atlanıyordu. Yalnızca oyun sesinin olduğu bir bot maçında bu başlangıç eşiğine saniyelerin %1'inde ulaşıldı; gerçek maçlarda %44–60'ında.
+- **Hep canlı kalır:** Telsiz bir sebeple 5 saniyeden fazla geride kalırsa birikmiş sesi atlar ve canlı sese döner; geç gelen bir uyarı oyunda işe yaramaz. Bu süre `config.toml` içinde `[performance]` bölümündeki `max_lag_s` ile değiştirilebilir (`0` = hiç atlama).
+- **Oyun önce gelir:** Telsiz en fazla 4 işlemci çekirdeği kullanır ve kimse konuşmazken neredeyse hiç kaynak kullanmaz. Oyunu dinlerken konuşma tanıma **işlemcide** yapılır: maç sırasında CS2 ekran kartını o kadar doldurur ki, ekran kartında 4 saniyelik bir cümlenin tanınması ~26 saniye sürdü (işlemcide ~3 saniye, önceki sürümle). Ekran kartı oyuna kalır. İşlem önceliği bilerek normal bırakılır; düşük öncelikte tanıma CS2'nin arkasında takılıyordu.
+- **Doğruluk modu:** Varsayılan model `small`, hızlı ve hafiftir. Daha isabetli tanıma için `config.toml` içinde `[asr]` bölümüne `model = "large-v3-turbo"` yaz: test kayıtlarında kelime hata oranı %38 yerine %26, ama her parça ~0,4 yerine ~2,2 saniye sürer ve işlemciyi daha çok kullanır (ilk kullanımda 1,6 GB indirir).
+- **Çeviri:** Kurulu RAM'e göre seçilir: 24 GB ve üstü **NLLB-200 1.3B** (en iyi kalite), 12–16 GB **NLLB-200 600M**, daha azı **Argos Translate** (en hafif). Çeviri her zaman işlemcide çalışır. NLLB Rusça ve Ukraynacayı İngilizceye uğramadan doğrudan Türkçeye çevirir. Oyun terimleri (AWP, eco, A long…) çevrilmeden kalır ve kısaltmalar (nt, gg…) açılır; sözlük [data/glossary.toml](data/glossary.toml) dosyasında.
+- **NLLB lisansı:** NLLB-200 model ağırlıklarının lisansı **CC-BY-NC-4.0**'dır, yani yalnızca ticari olmayan kullanıma izin verir. Telsiz'in kodu MIT lisanslıdır; NLLB modeli Telsiz ile dağıtılmaz, ilk kullanımda indirilir.
+- **Gizlilik:** Ses diske yazılmaz ve bilgisayarından dışarı çıkmaz. Tanıma ve çeviri yereldir; telemetri yoktur. Telefon modu yalnızca yerel ağda çalışır ve bağlantıda bu oturuma özel rastgele bir erişim anahtarı vardır; anahtarı olmayan cihazlar reddedilir.
+- Konsolda her satır için uçtan uca gecikme yazılır (konuşma bitişinden ekrana). Ölçüm raporları [docs/eval](docs/eval) klasöründe.
 
-Oyun terimleri (AWP, eco, A long…) çevrilmeden kalır ve kısaltmalar (nt, gg…) açılır; sözlük [data/glossary.toml](data/glossary.toml) dosyasında. Ölçüm raporları [docs/eval](docs/eval) klasöründe.
+### SSS
+
+**Çeviriler oyunun üstünde görünür mü?**
+Hayır. Telsiz oyun ekranına hiçbir şey çizmez; çevirileri telefonda veya ikinci ekrandaki tarayıcıda izlersin. Bu yüzden çözünürlük, 4:3 veya ölçek ayarları fark etmez.
+
+**VAC veya FACEIT'ten ban riski var mı?**
+Telsiz oyuna hiçbir şekilde dokunmaz: oyunun belleğini okumaz, oyuna kod enjekte etmez, oyun dosyalarını değiştirmez, oyuna tuş göndermez. Yalnızca OBS ve Discord'un da kullandığı Windows ses API'leriyle oyunun sesini dinler. Ayrıntılar aşağıda, "Neden güvenli?" bölümünde.
+
+**Tam Ekran'da çalışır mı?**
+Çalışır, ama testlerimizde tutarsızdı. En iyi sonuç için **Tam Ekran Pencereli** kullan.
+
+**Alt-tab yapınca neden çeviri gelmiyor?**
+CS2 arka plana alınınca kendi sesini kapatır; çevrilecek ses yoktur. Oyuna dönünce çeviriler devam eder.
+
+**Antivirüsüm veya Windows uyarı veriyor.**
+Program imzalı değildir ve PyInstaller ile paketlenen programlar bazen yanlışlıkla işaretlenir. Paket, açık kaynak koddan GitHub Actions'ta derlenir; istersen kaynak koddan kendin çalıştırabilir veya paketleyebilirsin (aşağıda).
+
+**Telefon bağlanmıyor.**
+Telefon bilgisayarla aynı Wi‑Fi ağında olmalı. **Telsiz - Telefon** ile başlat ve Windows ağ izni sorarsa **özel ağlar** için izin ver. QR koddaki bağlantı yalnızca o oturumda geçerlidir; Telsiz'i yeniden başlatınca yeni QR kodu okut.
+
+**Çeviriler bazen yanlış.**
+Sesli sohbet sıkıştırılmış ve gürültülüdür, varsayılan `small` modeli de hız için seçilmiştir. Daha isabetli tanıma için doğruluk moduna geç (yukarıda). Yanlış çevrilen oyun terimleri için sözlüğe ekleme önerebilirsin.
 
 ### Neden güvenli?
 
@@ -100,17 +102,33 @@ Kaynak kodun tamamı açıktır; bu iddiaları kendin doğrulayabilirsin.
 ### Gereksinimler
 
 - Windows 10 2004 (build 19041) veya üstü, 64-bit
-- Python 3.11 veya üstü (kaynak koddan çalıştırmak için)
+- Disk: program için ~350 MB, modeller için ~1–2 GB
+- Kaynak koddan çalıştırmak için Python 3.11 veya üstü
 
-### Geliştirme
+### Kaynak koddan çalıştırma ve geliştirme
 
 ```powershell
 git clone https://github.com/YusufOzturk00/telsiz.git
 cd telsiz
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-pip install -e ".[dev]"
+pip install -e ".[all,dev]"
+python -m telsiz --live
 ```
+
+Telefonda da görmek için `python -m telsiz --live --phone`, ayar dosyası için `--config config.toml`, bütün bilgisayar sesini dinlemek için `--capture system`, başka bir programla denemek için `--app` kullan (ör. tarayıcıda Rusça bir video açıp `python -m telsiz --live --app chrome.exe`). Bir ses dosyasını çevirmek için: `python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr`. NVIDIA ekran kartında oyun dışında tanıma için `pip install -e ".[gpu]"`.
+
+`telsiz-loopback.exe` açık kaynak kodundan ([native/process_loopback](native/process_loopback)) GitHub Actions'ta derlenir; repoda hazır exe tutulmaz. Son derlenmiş halini şöyle indirebilirsin ([GitHub CLI](https://cli.github.com/) gerekir):
+
+```powershell
+$run = gh run list --repo YusufOzturk00/telsiz --workflow ci.yml --branch main --status success -L 1 --json databaseId -q ".[0].databaseId"
+```
+
+```powershell
+gh run download $run --repo YusufOzturk00/telsiz -n telsiz-loopback -D native/process_loopback/build/Release
+```
+
+Ya da kendin derle: CMake ve Visual Studio Build Tools (C++) gerekir; adımlar [native/process_loopback/README.md](native/process_loopback/README.md) dosyasında.
 
 Kontroller:
 
@@ -118,16 +136,15 @@ Kontroller:
 ruff check .
 ruff format --check .
 pytest
-python -m telsiz --help
 ```
 
-Gerçek modelle çalışan yavaş testler `@pytest.mark.slow` ile işaretlidir ve varsayılan olarak atlanır. Çalıştırmak için önce `pip install -e ".[all,dev]"`, sonra `pytest -m slow` kullan; ilk çalıştırma modelleri indirir.
+Gerçek modelle çalışan yavaş testler `@pytest.mark.slow` ile işaretlidir ve varsayılan olarak atlanır; `pytest -m slow` ile çalıştır (ilk çalıştırma modelleri indirir).
 
-`telsiz-loopback.exe`'yi derlemek için CMake ve Visual Studio Build Tools (C++) gerekir; adımlar [native/process_loopback/README.md](native/process_loopback/README.md) dosyasında.
+Paketi oluşturmak için önce `telsiz-loopback.exe`'yi derle, sonra `pip install -e ".[all,package]"` ve `python scripts/build_package.py` çalıştır; `dist` klasöründe zip oluşur. CI her değişiklikte paketi derler. `v1.0.0` gibi bir etiket gönderilince paket GitHub Releases'a eklenir.
 
 ### Lisans
 
-[MIT](LICENSE)
+[MIT](LICENSE). Paketteki açık kaynak bileşenler `THIRD_PARTY_NOTICES.txt` dosyasında listelenir.
 
 ### Marka notu
 
@@ -154,57 +171,59 @@ Telsiz does not show the translation on top of the game; nothing is drawn on the
 
 Telsiz only deals with voice chat; it does not translate text chat.
 
-### Status
+<p>
+  <img src="docs/images/web-page.png" alt="The translation page on the PC" width="560">
+  <img src="docs/images/phone.png" alt="The translation page on a phone" width="195">
+</p>
 
-🚧 **In early development.** Right now it can listen live to **only CS2's audio**, translate the speech into Turkish and show the translation in a browser (second screen) and on your phone (M3). Installation steps will be here once a usable release is published.
+### Installation
 
-Developers can try it like this (the first run downloads the models):
+1. Download `Telsiz-…-windows-x64.zip` from the [Releases](https://github.com/YusufOzturk00/telsiz/releases) page and extract it to a folder.
+2. Double-click **Telsiz.exe**. It starts listening to CS2, and the translations open in a browser on this PC. If CS2 is closed, it waits for the game to start.
+3. To see them on your phone, run **Telsiz - Telefon** instead and scan the QR code in the console. The phone must be on the same Wi‑Fi network. Windows may ask whether Telsiz may use the network: allow it for **private networks** only.
 
-```powershell
-pip install -e ".[all]"
-python -m telsiz --live
-```
+- The models are downloaded once, on first start: ~1–2 GB depending on your PC's RAM. Later starts take a few seconds.
+- The program is not signed, so Windows may show "Windows protected your PC": **More info → Run anyway**.
+- To quit, press **Ctrl+C** in the console.
+- To change settings, copy `config.example.toml` to `config.toml` in the same folder and edit it; the comments in the file explain each setting.
 
-`http://127.0.0.1:8765/` opens in the browser and the translations stream there. To see them on your phone too:
+### Things to know
 
-```powershell
-python -m telsiz --live --phone
-```
-
-A QR code and a link appear in the console; the phone must be on the same Wi‑Fi network. The link contains a random access key for this session only; devices without the key are refused. The first time, Windows may ask whether Python may use the network: allow it for **private networks** only.
-
-**Only the game's audio:** Telsiz listens only to `cs2.exe`'s audio; music, videos and Discord playing in the background are not translated. This needs a small helper program called `telsiz-loopback.exe`. It is built from its open source code ([native/process_loopback](native/process_loopback)) on GitHub Actions; no prebuilt exe is kept in the repository. When running from source you can download the latest build like this ([GitHub CLI](https://cli.github.com/) required):
-
-```powershell
-$run = gh run list --repo YusufOzturk00/telsiz --workflow ci.yml --branch main --status success -L 1 --json databaseId -q ".[0].databaseId"
-```
-
-```powershell
-gh run download $run --repo YusufOzturk00/telsiz -n telsiz-loopback -D native/process_loopback/build/Release
-```
-
-Or build it yourself (see [native/process_loopback/README.md](native/process_loopback/README.md)). If the game is closed, Telsiz waits for it to start; when the game closes and starts again, it reconnects by itself. If the helper cannot be found or your Windows version does not support this, Telsiz says so in the console and switches to listening to **all audio** playing on your PC. Use `--capture system` to choose all audio yourself, and `--app` to try it with another program (e.g. open a Russian video in the browser and run `python -m telsiz --live --app chrome.exe`).
-
-Things to know:
-
-- Audio is never written to disk and never leaves your PC. Translation is local; phone mode only works on the local network.
-- The console shows the end-to-end latency of every line (from the end of speech to the screen).
 - **Display mode:** Translations were most consistent in **Fullscreen Windowed** mode. In **Fullscreen** mode Telsiz worked inconsistently in our tests (in some sessions translations came very rarely), so we recommend **Fullscreen Windowed**.
 - **Alt-tab:** CS2 mutes its own audio when it goes to the background. With no audio to translate, no translations arrive while you are alt-tabbed; they continue when you return to the game.
-- **Speed:** A line usually arrives 2.5–3 seconds after the speech ends. Whisper normally tries to decode a sentence it is unsure about again up to 5 more times; with game noise this happened on ~27% of lines, and those lines took ~4.7 instead of ~2.2 seconds. Because the text did not improve on the test recordings, Telsiz decodes each sentence once. To turn the retries back on, write `temperature_fallback = true` in the `[asr]` section of `config.toml`.
-- **Always live:** if Telsiz falls more than 5 seconds behind because the graphics card is busy with the game, it skips the backlog and returns to live audio; a late warning is useless in a game. Change this with `max_lag_s` in the `[performance]` section of `config.toml` (`0` = never skip). On exit it reports how many seconds were skipped and how many sound clips that were not speech (gunfire, footsteps) were dropped.
-- **The game comes first:** Telsiz uses at most 4 CPU cores and almost no resources while nobody speaks. Its process priority is deliberately left at normal: at a lower priority, speech recognition stalled while CS2 used every core, and translations only arrived after alt-tab (even with the graphics card).
-- **Automatic settings for your hardware:** At startup Telsiz looks at your PC and writes what it chose and why to the console.
-  - **Speech recognition:** With an NVIDIA graphics card, `large-v3-turbo` (more accurate) runs on the card; otherwise `small` runs on the processor. AMD and Intel graphics cards do not support this acceleration (CUDA), so the processor is used.
-  - **While listening to the game, recognition runs on the processor:** During a match CS2 keeps the graphics card so busy that recognizing a 4-second sentence on the card took ~26 seconds; giving Telsiz priority made no difference, and recognition only finished after alt-tab. On the processor the same sentence took ~3 seconds with the game in front (measured: RTX 4060, Ryzen 5 7500F, Windows Game Mode on). So while listening to CS2, Telsiz recognizes speech on the processor with the `small` model and leaves the graphics memory to the game. To use the graphics card anyway, pass `--device cuda`.
-  - **Translation:** Chosen by installed RAM: 24 GB or more **NLLB-200 1.3B** (best quality), 12–16 GB **NLLB-200 600M**, less **Argos Translate** (lightest). Translation always runs on the processor; the graphics card is left to the game. If NLLB cannot be downloaded or loaded, Argos is used.
-  - **Resource use (approximate):** NLLB-1.3B ~1.6 GB RAM, NLLB-600M ~0.8 GB, Argos ~0.4 GB; speech recognition on the graphics card uses ~1.2 GB of graphics memory.
-  - **Downloads (once, on first use):** about 4.4 GB in total on a PC with NVIDIA and 32 GB RAM, ~3.7 GB with NVIDIA and 16 GB RAM, ~1.3 GB with an AMD/Intel graphics card and 16 GB RAM.
-  - **To choose yourself:** in `config.toml` write `engine = "nllb"` or `engine = "argos"` in the `[translate]` section, and `device = "cpu"` in the `[asr]` section (never uses the graphics card).
-- **NLLB license:** the NLLB-200 model weights are licensed **CC-BY-NC-4.0**, which allows non-commercial use only. Telsiz's code is MIT-licensed; the NLLB model is not distributed with Telsiz and is downloaded on first use. NLLB translates Russian and Ukrainian straight into Turkish without going through English.
-- To translate an audio file: `python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr`
+- **Only the game's audio:** Telsiz listens only to `cs2.exe`'s audio; music, videos and Discord playing in the background are not translated. A small helper program, `telsiz-loopback.exe`, does this. If your Windows version does not support it, Telsiz says so in the console and switches to listening to **all audio** playing on your PC.
+- **Speed:** A line usually arrives ~2 seconds after the speech ends (~3 seconds in the previous version). Whisper padded every sound clip to a 30-second window; since clips are at most a few seconds long, Telsiz now uses a 10-second window. Recognition got 4 times faster at the same accuracy. Whisper used to try decoding a sentence it was unsure about again up to 5 more times; in the game this happened on ~27% of lines and pushed them to ~4.7 seconds. Because the text did not improve, Telsiz decodes each sentence once.
+- **Catching speech under game sound:** A teammate's voice starts clearly, then sinks under the game sound. Telsiz still starts an utterance only on a clear voice, but then counts the weaker part as speech too; before, most of these sentences were cut short or skipped entirely. In a bot match with only game sound, this start threshold was reached in 1% of seconds; in real matches, in 44–60%.
+- **Always live:** if Telsiz falls more than 5 seconds behind for any reason, it skips the backlog and returns to live audio; a late warning is useless in a game. Change this with `max_lag_s` in the `[performance]` section of `config.toml` (`0` = never skip).
+- **The game comes first:** Telsiz uses at most 4 CPU cores and almost no resources while nobody speaks. While listening to the game, speech recognition runs on the **processor**: during a match CS2 keeps the graphics card so busy that recognizing a 4-second sentence on the card took ~26 seconds (~3 seconds on the processor, with the previous version). The graphics card is left to the game. The process priority is deliberately left at normal; at a lower priority, recognition stalled behind CS2.
+- **Accuracy mode:** The default model, `small`, is fast and light. For more accurate recognition, write `model = "large-v3-turbo"` in the `[asr]` section of `config.toml`: on the test recordings the word error rate is 26% instead of 38%, but each clip takes ~2.2 instead of ~0.4 seconds and uses more of the processor (downloads 1.6 GB on first use).
+- **Translation:** Chosen by installed RAM: 24 GB or more **NLLB-200 1.3B** (best quality), 12–16 GB **NLLB-200 600M**, less **Argos Translate** (lightest). Translation always runs on the processor. NLLB translates Russian and Ukrainian straight into Turkish without going through English. Game terms (AWP, eco, A long…) stay untranslated and abbreviations (nt, gg…) are expanded; the glossary is in [data/glossary.toml](data/glossary.toml).
+- **NLLB license:** the NLLB-200 model weights are licensed **CC-BY-NC-4.0**, which allows non-commercial use only. Telsiz's code is MIT-licensed; the NLLB model is not distributed with Telsiz and is downloaded on first use.
+- **Privacy:** Audio is never written to disk and never leaves your PC. Recognition and translation are local; there is no telemetry. Phone mode only works on the local network, and the link contains a random access key for this session only; devices without the key are refused.
+- The console shows the end-to-end latency of every line (from the end of speech to the screen). Measurement reports are in the [docs/eval](docs/eval) folder.
 
-Game terms (AWP, eco, A long…) stay untranslated and abbreviations (nt, gg…) are expanded; the glossary is in [data/glossary.toml](data/glossary.toml). Measurement reports are in the [docs/eval](docs/eval) folder.
+### FAQ
+
+**Do the translations appear on top of the game?**
+No. Telsiz draws nothing on the game screen; you read the translations on your phone or in a browser on a second screen. So resolution, 4:3 or scaling settings make no difference.
+
+**Is there a risk of a VAC or FACEIT ban?**
+Telsiz never touches the game: it does not read the game's memory, inject code into the game, modify game files or send keys to the game. It only listens to the game's audio through the Windows audio APIs that OBS and Discord also use. Details are below, in "Why is this safe?".
+
+**Does it work in Fullscreen?**
+It works, but it was inconsistent in our tests. For the best results use **Fullscreen Windowed**.
+
+**Why do no translations arrive when I alt-tab?**
+CS2 mutes its own audio when it goes to the background; there is no audio to translate. Translations continue when you return to the game.
+
+**My antivirus or Windows shows a warning.**
+The program is not signed, and programs packaged with PyInstaller are sometimes flagged by mistake. The package is built from the open source code on GitHub Actions; if you prefer, you can run or package it from source yourself (below).
+
+**The phone does not connect.**
+The phone must be on the same Wi‑Fi network as the PC. Start with **Telsiz - Telefon**, and if Windows asks for network access, allow it for **private networks**. The link in the QR code is only valid for that session; after restarting Telsiz, scan the new QR code.
+
+**Translations are sometimes wrong.**
+Voice chat is compressed and noisy, and the default `small` model was chosen for speed. For more accurate recognition, switch to accuracy mode (above). For game terms that are translated wrongly, you can suggest additions to the glossary.
 
 ### Why is this safe?
 
@@ -231,17 +250,33 @@ All of the source code is open; you can verify these claims yourself.
 ### Requirements
 
 - Windows 10 2004 (build 19041) or later, 64-bit
-- Python 3.11 or later (to run from source)
+- Disk: ~350 MB for the program, ~1–2 GB for the models
+- Python 3.11 or later to run from source
 
-### Development
+### Running from source and development
 
 ```powershell
 git clone https://github.com/YusufOzturk00/telsiz.git
 cd telsiz
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-pip install -e ".[dev]"
+pip install -e ".[all,dev]"
+python -m telsiz --live
 ```
+
+Use `python -m telsiz --live --phone` to see the translations on your phone too, `--config config.toml` for a settings file, `--capture system` to listen to all PC audio, and `--app` to try it with another program (e.g. open a Russian video in the browser and run `python -m telsiz --live --app chrome.exe`). To translate an audio file: `python -m telsiz --input tests/fixtures/en_magi_1.wav --target tr`. For recognition on an NVIDIA graphics card outside the game: `pip install -e ".[gpu]"`.
+
+`telsiz-loopback.exe` is built from its open source code ([native/process_loopback](native/process_loopback)) on GitHub Actions; no prebuilt exe is kept in the repository. You can download the latest build like this ([GitHub CLI](https://cli.github.com/) required):
+
+```powershell
+$run = gh run list --repo YusufOzturk00/telsiz --workflow ci.yml --branch main --status success -L 1 --json databaseId -q ".[0].databaseId"
+```
+
+```powershell
+gh run download $run --repo YusufOzturk00/telsiz -n telsiz-loopback -D native/process_loopback/build/Release
+```
+
+Or build it yourself: this needs CMake and the Visual Studio Build Tools (C++); the steps are in [native/process_loopback/README.md](native/process_loopback/README.md).
 
 Checks:
 
@@ -249,16 +284,15 @@ Checks:
 ruff check .
 ruff format --check .
 pytest
-python -m telsiz --help
 ```
 
-Slow tests that run real models are marked with `@pytest.mark.slow` and are skipped by default. To run them, first `pip install -e ".[all,dev]"`, then use `pytest -m slow`; the first run downloads the models.
+Slow tests that run real models are marked with `@pytest.mark.slow` and are skipped by default; run them with `pytest -m slow` (the first run downloads the models).
 
-Building `telsiz-loopback.exe` needs CMake and the Visual Studio Build Tools (C++); the steps are in [native/process_loopback/README.md](native/process_loopback/README.md).
+To build the package, first build `telsiz-loopback.exe`, then run `pip install -e ".[all,package]"` and `python scripts/build_package.py`; the zip appears in the `dist` folder. CI builds the package on every change. When a tag like `v1.0.0` is pushed, the package is added to GitHub Releases.
 
 ### License
 
-[MIT](LICENSE)
+[MIT](LICENSE). The open source components in the package are listed in `THIRD_PARTY_NOTICES.txt`.
 
 ### Trademark notice
 

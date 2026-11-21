@@ -57,15 +57,15 @@ README'de Türkçe bölümde "Neden güvenli?", İngilizce bölümde "Why is thi
 | Dil | Python 3.11+ | Hızlı prototip için. İleride sıcak noktalar native'e taşınabilir |
 | Ses yakalama (M1) | `PyAudioWPatch` (WASAPI sistem loopback) | Basit başlangıç |
 | Ses yakalama (M3) | Process loopback | Microsoft `ApplicationLoopback` örneğinden (MIT) türetilmiş küçük bir C++ yardımcı exe/DLL, **CI'da kaynak koddan derlenecek**. Repoya hazır (prebuilt) binary konmaz |
-| VAD | `silero-vad` | Sadece konuşma bölümlerini ayıklar |
-| Konuşmayı yazıya çevirme ve dil tespiti | `faster-whisper` (CTranslate2) | Model seçilebilir: `small` / `medium` / `large-v3-turbo`. Varsayılan `auto`: NVIDIA (CUDA) varsa GPU'da `large-v3-turbo` (`int8_float16`), yoksa CPU'da `small` (int8). AMD/Intel ekran kartları CUDA desteklemediği için CPU'ya düşer. **Oyun dinlenirken (`--live`, capture `auto`) `auto` her zaman CPU'dur:** ölçümde CS2 maç sırasında GPU'yu doldurduğu için bir cümle GPU'da ~26 sn, CPU'da ~3 sn sürdü (öncelik fark etmedi) |
+| VAD | `silero-vad` | Sadece konuşma bölümlerini ayıklar. Konuşma 0.5'te başlar, sonra 0.35'e kadar konuşma sayılır (`continue_threshold`): oyunda ses önce net başlayıp oyun sesinin altında 0.3–0.5'e düşüyordu; bot maçında yalnız oyun sesi 0.5'e saniyelerin %1'inde ulaştı |
+| Konuşmayı yazıya çevirme ve dil tespiti | `faster-whisper` (CTranslate2) | Model seçilebilir: `small` / `medium` / `large-v3-turbo`. Varsayılan `auto`: NVIDIA (CUDA) varsa GPU'da `large-v3-turbo` (`int8_float16`), yoksa CPU'da `small` (int8). AMD/Intel ekran kartları CUDA desteklemediği için CPU'ya düşer. **Oyun dinlenirken (`--live`, capture `auto`) `auto` her zaman CPU'dur:** ölçümde CS2 maç sırasında GPU'yu doldurduğu için bir cümle GPU'da ~26 sn, CPU'da ~3 sn sürdü (öncelik fark etmedi). **Encoder penceresi** (`window_s`, 0 = otomatik): CPU'da `small` 10 sn, `large-v3-turbo` 15 sn (30 sn ile aynı doğruluk, 3–4 kat hızlı, ölçüldü); GPU'da ve ölçülmemiş modellerde 30 sn. **Sıcaklık geri dönüşü kapalı** (`temperature_fallback`): oyunda satırların %27'sini ~4,7 sn'ye çıkarıyordu, metni iyileştirmedi |
 | Çeviri | Takılıp çıkarılabilir `Translator` arayüzü | Varsayılan: **`auto`**, kurulu RAM'e göre seçilir: 22 GB ve üstü **NLLB-200 distilled 1.3B**, 11 GB ve üstü **NLLB-200 distilled 600M**, altı **Argos Translate**. Hepsi yerel ve CPU'da çalışır. NLLB yüklenemezse otomatik olarak Argos'a düşülür. NLLB model ağırlıkları **CC-BY-NC-4.0** (ticari olmayan kullanım); ağırlıklar uygulamayla dağıtılmaz, ilk kullanımda indirilir; bu README'de belirtilir. Opsiyonel: **DeepL API** (kullanıcının kendi anahtarıyla) |
 | Sunucu | `FastAPI` + `uvicorn` + WebSocket | Yalnızca yerel ağda çalışır, varsayılan `127.0.0.1`; telefon modu açıkça açıldığında LAN'a bağlanır |
 | Web arayüzü | Düz HTML/CSS/JS, build adımı yok | İkinci ekran ve telefon bunu kullanır |
 | QR kod | `qrcode` | Telefon bağlantısı için |
 | Ayarlar | `config.toml` (`tomllib` + `tomli-w`) | |
 | Test | `pytest` | |
-| Paketleme (sonra) | PyInstaller | |
+| Paketleme | PyInstaller (tek klasör) | `packaging/telsiz.spec` + `scripts/build_package.py`. Modeller ve CUDA kütüphaneleri pakete girmez; modeller ilk kullanımda indirilir. CI her değişiklikte paketi derler; `v*` etiketi GitHub Release yayınlar |
 
 Bağımlılık eklerken lisansı kontrol et; GPL/AGPL bağımlılık ekleme, önce bana sor.
 
@@ -144,11 +144,14 @@ telsiz/
 │   └── util/
 │       └── qr.py
 ├── native/process_loopback/  # M3: C++ yardımcı (CMake), CI'da derlenir
+├── packaging/                # M5: PyInstaller spec, giriş betiği, sürüm notları
+├── scripts/                  # ölçüm betikleri, build_package.py
+├── docs/eval/                # ölçüm raporları
 ├── data/glossary.toml        # oyun terimleri sözlüğü
 ├── tests/
 │   ├── fixtures/             # yalnızca CC0/kamu malı ses örnekleri, gerçek oyuncu kaydı YOK
 │   └── ...
-└── .github/workflows/ci.yml  # windows-latest: lint (ruff), test (pytest), native build
+└── .github/workflows/        # ci.yml (lint, test, native, paket), package.yml, release.yml
 ```
 
 ---
@@ -229,6 +232,6 @@ Her kilometre taşı ayrı bir branch/PR olarak ilerlesin. Bir kilometre taşın
 
 ---
 
-## 11. Şimdi başla
+## 11. Proje durumu
 
-**M0 ile başla.** Önce bu dosyaya göre kısa bir uygulama planı yaz, sonra iskeleti oluştur ve CI'ı ayarla. M0 bitince dur ve bana özet ver.
+M0, M1, M2, M3 ve M5 tamamlandı; M4 (overlay) iptal edildi. Sürüm 1.0.0. Yeni bir iş bu dosyadaki kurallara göre yapılır; büyük bir değişiklikten önce kısa bir plan yaz ve bana sor.
