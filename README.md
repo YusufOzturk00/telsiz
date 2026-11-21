@@ -14,17 +14,18 @@
 
 Telsiz, Counter-Strike 2 oynarken takım arkadaşlarının **sesli sohbetini** dinleyen, konuşulan dili (İngilizce, Rusça, Ukraynaca, Lehçe vb.) tespit eden ve seçtiğin dile (varsayılan: Türkçe) çevirip **yazı olarak** gösteren bir masaüstü uygulamasıdır.
 
-Çeviriyi üç yerde görebilirsin (aynı anda birden fazlası açık olabilir):
+Çeviriyi iki yerde görebilirsin (ikisi aynı anda açık olabilir):
 
-1. **Overlay:** Oyunun üstünde duran, şeffaf, tıklamaları geçiren bir pencere
-2. **İkinci ekran:** Normal bir pencere veya tarayıcı sekmesi
-3. **Telefon:** Aynı Wi‑Fi ağında, QR kod okutularak açılan bir web sayfası
+1. **İkinci ekran:** Bilgisayardaki bir tarayıcı sekmesi (`http://127.0.0.1:8765/`), örneğin ikinci monitörde
+2. **Telefon:** Aynı Wi‑Fi ağında, QR kod okutularak açılan bir web sayfası
+
+Telsiz çeviriyi oyunun üstünde göstermez; oyun ekranına hiçbir şey çizilmez. Tek monitörle oynuyorsan çevirileri telefondan izle: oyun öndeyken bilgisayardaki sayfa oyunun arkasında kalır.
 
 Telsiz yalnızca sesli sohbetle ilgilenir; yazılı sohbeti çevirmez.
 
 ### Durum
 
-🚧 **Erken geliştirme aşamasında.** Şu an **yalnızca CS2'nin sesini** canlı olarak dinleyip konuşmaları Türkçeye çevirebiliyor ve çeviriyi tarayıcıda (ikinci ekran) ve telefonda gösterebiliyor (M3). Overlay henüz yok; kullanılabilir bir sürüm yayınlandığında kurulum adımları burada olacak.
+🚧 **Erken geliştirme aşamasında.** Şu an **yalnızca CS2'nin sesini** canlı olarak dinleyip konuşmaları Türkçeye çevirebiliyor ve çeviriyi tarayıcıda (ikinci ekran) ve telefonda gösterebiliyor (M3). Kullanılabilir bir sürüm yayınlandığında kurulum adımları burada olacak.
 
 Geliştiriciler şöyle deneyebilir (ilk çalıştırma modelleri indirir):
 
@@ -57,6 +58,9 @@ Bilmen gerekenler:
 
 - Ses diske yazılmaz ve bilgisayarından dışarı çıkmaz. Çeviri yereldir; telefon modu yalnızca yerel ağda çalışır.
 - Konsolda her satır için uçtan uca gecikme yazılır (konuşma bitişinden ekrana).
+- **Ekran modu:** Çeviriler en tutarlı **Tam Ekran Pencereli** modda geldi. **Tam Ekran** modunda testlerimizde tutarsız çalıştı (bazı oturumlarda çeviriler çok seyrek geldi); bu yüzden **Tam Ekran Pencereli** öneriyoruz.
+- **Alt-tab:** CS2 arka plana alınınca kendi sesini kapatır. Çevrilecek ses olmadığı için alt-tab yaptığında çeviri gelmez; oyuna dönünce devam eder.
+- **Hız:** Bir satır, konuşma bittikten genellikle 2,5–3 saniye sonra gelir. Whisper emin olamadığı bir cümleyi normalde 5 kez daha baştan çözmeyi dener; oyun gürültüsünde bu, satırların ~%27'sinde oluyordu ve o satırlar ~2,2 yerine ~4,7 saniyede geliyordu. Test kayıtlarında metin iyileşmediği için Telsiz her cümleyi bir kez çözer. Tekrar denemeleri geri açmak için `config.toml` içinde `[asr]` bölümüne `temperature_fallback = true` yaz.
 - **Hep canlı kalır:** Ekran kartı oyunla meşgul olduğu için Telsiz 5 saniyeden fazla geride kalırsa birikmiş sesi atlar ve canlı sese döner; geç gelen bir uyarı oyunda işe yaramaz. Bu süre `config.toml` içinde `[performance]` bölümündeki `max_lag_s` ile değiştirilebilir (`0` = hiç atlama). Kapanışta kaç saniyenin atlandığı ve konuşma olmayan kaç ses parçasının (silah, adım sesi) elendiği yazılır.
 - **Oyun önce gelir:** Telsiz en fazla 4 işlemci çekirdeği kullanır ve kimse konuşmazken neredeyse hiç kaynak kullanmaz. İşlem önceliği bilerek normal bırakılır: düşük öncelikte, CS2 bütün çekirdekleri kullanırken konuşma tanıma takılıyor ve çeviriler ancak alt-tab yapınca geliyordu (ekran kartı kullanılırken bile).
 - **Donanıma göre otomatik ayar:** Telsiz açılırken bilgisayarını tanır ve neyi neden seçtiğini konsola yazar.
@@ -73,7 +77,7 @@ Oyun terimleri (AWP, eco, A long…) çevrilmeden kalır ve kısaltmalar (nt, gg
 
 ### Neden güvenli?
 
-Telsiz, VAC, FACEIT AC ve diğer anti-cheat sistemleri açısından **sıfır risk** taşıyacak şekilde tasarlanmıştır. Oyuna hiçbir şekilde dokunmaz; yalnızca Windows'un, OBS ve Discord'un da kullandığı standart ses ve pencere API'lerini kullanır.
+Telsiz, VAC, FACEIT AC ve diğer anti-cheat sistemleri açısından **sıfır risk** taşıyacak şekilde tasarlanmıştır. Oyuna hiçbir şekilde dokunmaz; yalnızca Windows'un, OBS ve Discord'un da kullandığı standart ses API'lerini kullanır.
 
 **Telsiz'in asla yapmadığı şeyler:**
 
@@ -88,8 +92,8 @@ Telsiz, VAC, FACEIT AC ve diğer anti-cheat sistemleri açısından **sıfır ri
 **Telsiz'in kullandığı yöntemler:**
 
 - **Ses:** Windows WASAPI loopback capture (sistem geneli) ve **Application/Process Loopback** (`ActivateAudioInterfaceAsync` + `AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK`). Bu, OBS ve Discord'un kullandığı işletim sistemi seviyesindeki API'dir; oyun sürecine dokunmaz. Oyunun süreç kimliğini (PID) bulmak için yalnızca süreç listesi okunur (Windows Görev Yöneticisi'nin de gösterdiği liste, `CreateToolhelp32Snapshot`). Bu bir **liste okuma** işlemidir, süreç açılmaz. PID yalnızca Windows ses motoruna "bu programın sesini ver" demek için kullanılır. Bu işi yapan `telsiz-loopback.exe`, Microsoft'un açık kaynak ApplicationLoopback örneğine dayanır ve kaynak kodundan derlenir.
-- **Görüntü:** Ayrı, kendi sürecinde çalışan, `WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW` stilli şeffaf bir pencere. Pencere, Windows'un masaüstü pencere yöneticisi (DWM) tarafından çizilir; oyunun çizim hattına girilmez.
-- **(İleride, opsiyonel)** Valve'ın resmi **Game State Integration (GSI)** özelliği, örneğin raund durumuna göre overlay'i gizlemek için.
+- **Görüntü:** Çeviriler yalnızca Telsiz'in kendi web sayfasında (tarayıcı veya telefon) gösterilir. Oyunun ekranına hiçbir şey çizilmez, oyunun penceresine dokunulmaz.
+- **(İleride, opsiyonel)** Valve'ın resmi **Game State Integration (GSI)** özelliği (oyunun kendi paylaştığı raund bilgisi).
 
 Kaynak kodun tamamı açıktır; bu iddiaları kendin doğrulayabilirsin.
 
@@ -141,17 +145,18 @@ Counter-Strike ve CS2, Valve Corporation'ın ticari markalarıdır. Telsiz'in Va
 
 Telsiz is a desktop application that listens to your teammates' **voice chat** while you play Counter-Strike 2, detects the spoken language (English, Russian, Ukrainian, Polish, etc.), translates it into the language you choose (default: Turkish) and shows it **as text**.
 
-You can see the translation in three places (more than one can be open at the same time):
+You can see the translation in two places (both can be open at the same time):
 
-1. **Overlay:** A transparent, click-through window that sits on top of the game
-2. **Second screen:** A normal window or browser tab
-3. **Phone:** A web page on the same Wi‑Fi network, opened by scanning a QR code
+1. **Second screen:** A browser tab on your PC (`http://127.0.0.1:8765/`), for example on a second monitor
+2. **Phone:** A web page on the same Wi‑Fi network, opened by scanning a QR code
+
+Telsiz does not show the translation on top of the game; nothing is drawn on the game screen. If you play on one monitor, watch the translations on your phone: while the game is in front, the page on your PC is hidden behind it.
 
 Telsiz only deals with voice chat; it does not translate text chat.
 
 ### Status
 
-🚧 **In early development.** Right now it can listen live to **only CS2's audio**, translate the speech into Turkish and show the translation in a browser (second screen) and on your phone (M3). The overlay does not exist yet; installation steps will be here once a usable release is published.
+🚧 **In early development.** Right now it can listen live to **only CS2's audio**, translate the speech into Turkish and show the translation in a browser (second screen) and on your phone (M3). Installation steps will be here once a usable release is published.
 
 Developers can try it like this (the first run downloads the models):
 
@@ -184,6 +189,9 @@ Things to know:
 
 - Audio is never written to disk and never leaves your PC. Translation is local; phone mode only works on the local network.
 - The console shows the end-to-end latency of every line (from the end of speech to the screen).
+- **Display mode:** Translations were most consistent in **Fullscreen Windowed** mode. In **Fullscreen** mode Telsiz worked inconsistently in our tests (in some sessions translations came very rarely), so we recommend **Fullscreen Windowed**.
+- **Alt-tab:** CS2 mutes its own audio when it goes to the background. With no audio to translate, no translations arrive while you are alt-tabbed; they continue when you return to the game.
+- **Speed:** A line usually arrives 2.5–3 seconds after the speech ends. Whisper normally tries to decode a sentence it is unsure about again up to 5 more times; with game noise this happened on ~27% of lines, and those lines took ~4.7 instead of ~2.2 seconds. Because the text did not improve on the test recordings, Telsiz decodes each sentence once. To turn the retries back on, write `temperature_fallback = true` in the `[asr]` section of `config.toml`.
 - **Always live:** if Telsiz falls more than 5 seconds behind because the graphics card is busy with the game, it skips the backlog and returns to live audio; a late warning is useless in a game. Change this with `max_lag_s` in the `[performance]` section of `config.toml` (`0` = never skip). On exit it reports how many seconds were skipped and how many sound clips that were not speech (gunfire, footsteps) were dropped.
 - **The game comes first:** Telsiz uses at most 4 CPU cores and almost no resources while nobody speaks. Its process priority is deliberately left at normal: at a lower priority, speech recognition stalled while CS2 used every core, and translations only arrived after alt-tab (even with the graphics card).
 - **Automatic settings for your hardware:** At startup Telsiz looks at your PC and writes what it chose and why to the console.
@@ -200,7 +208,7 @@ Game terms (AWP, eco, A long…) stay untranslated and abbreviations (nt, gg…)
 
 ### Why is this safe?
 
-Telsiz is designed to carry **zero risk** with respect to VAC, FACEIT AC and other anti-cheat systems. It never touches the game in any way; it only uses the standard Windows audio and window APIs that OBS and Discord also use.
+Telsiz is designed to carry **zero risk** with respect to VAC, FACEIT AC and other anti-cheat systems. It never touches the game in any way; it only uses the standard Windows audio APIs that OBS and Discord also use.
 
 **Things Telsiz never does:**
 
@@ -215,8 +223,8 @@ Telsiz is designed to carry **zero risk** with respect to VAC, FACEIT AC and oth
 **Methods Telsiz uses:**
 
 - **Audio:** Windows WASAPI loopback capture (system-wide) and **Application/Process Loopback** (`ActivateAudioInterfaceAsync` + `AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK`). This is the operating-system-level API that OBS and Discord use; it does not touch the game process. To find the game's process ID (PID), only the process list is read (the list Windows Task Manager also shows, `CreateToolhelp32Snapshot`). This is a **list read**; no process is opened. The PID is only used to tell the Windows audio engine "give me this program's audio". `telsiz-loopback.exe`, which does this, is based on Microsoft's open-source ApplicationLoopback sample and is built from source.
-- **Display:** A separate transparent window running in its own process, with the `WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW` styles. The window is drawn by the Windows Desktop Window Manager (DWM); the game's rendering pipeline is never entered.
-- **(Later, optional)** Valve's official **Game State Integration (GSI)** feature, for example to hide the overlay based on the round state.
+- **Display:** Translations are shown only on Telsiz's own web page (browser or phone). Nothing is drawn on the game screen, and the game's window is never touched.
+- **(Later, optional)** Valve's official **Game State Integration (GSI)** feature (the round information the game itself shares).
 
 All of the source code is open; you can verify these claims yourself.
 

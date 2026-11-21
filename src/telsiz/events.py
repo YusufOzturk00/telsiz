@@ -1,4 +1,4 @@
-"""Events published by the pipeline (console, WebSocket, overlay)."""
+"""Events published by the pipeline (console, WebSocket)."""
 
 from __future__ import annotations
 

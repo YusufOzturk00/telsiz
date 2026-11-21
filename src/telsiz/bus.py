@@ -1,8 +1,8 @@
-"""Event bus between the pipeline (worker threads) and the displays (asyncio, Qt).
+"""Event bus between the pipeline (worker threads) and the displays (web page, console).
 
 The pipeline publishes from its own thread. Async subscribers (WebSocket
 clients) receive events on the event loop the bus is bound to; plain
-listeners (console, overlay) are called directly in the publishing thread.
+listeners (console) are called directly in the publishing thread.
 New subscribers first get the recent history so a phone that connects late
 still sees the last lines.
 """
