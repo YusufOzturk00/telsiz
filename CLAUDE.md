@@ -15,10 +15,11 @@ README'de bir değişiklik yapıldığında **iki dil birlikte güncellenir**; b
 
 Counter-Strike 2 oynarken takım arkadaşlarının **sesli sohbetini** dinleyen, konuşulan dili (İngilizce, Rusça, Ukraynaca, Lehçe vb.) tespit eden ve kullanıcının seçtiği dile (varsayılan: Türkçe) çevirip **yazı olarak** gösteren bir masaüstü uygulaması.
 
-Çeviri üç yerde gösterilebilmeli (kullanıcı seçer, aynı anda birden fazlası açık olabilir):
-1. **Overlay**: Oyunun üstünde duran, şeffaf, tıklamaları geçiren pencere
-2. **İkinci ekran**: Normal bir pencere veya tarayıcı sekmesi
-3. **Telefon**: Aynı Wi‑Fi ağında, QR kod okutularak açılan bir web sayfası
+Çeviri iki yerde gösterilir (ikisi aynı anda açık olabilir):
+1. **İkinci ekran**: Bilgisayardaki bir tarayıcı sekmesi (`http://127.0.0.1:<port>/`), örneğin ikinci monitörde
+2. **Telefon**: Aynı Wi‑Fi ağında, QR kod okutularak açılan bir web sayfası
+
+**Oyunun üstünde gösterim (overlay) projeden çıkarıldı** (2026-11-21, proje sahibinin kararı): kullanıcı çevirileri telefondan veya ikinci ekrandan izler. Oyun ekranına hiçbir şey çizilmez; overlay ekleme ve önerme.
 
 **Kapsam dışı:** Yazılı (text) sohbet çevirisi **yapılmayacak**. Uygulama yalnızca sesli sohbetle ilgilenir. Konsol log dosyası okuma, `-condebug` / `con_logfile` gibi özellikler ekleme ve önerme.
 
@@ -42,8 +43,8 @@ Bu uygulama VAC, FACEIT AC ve diğer anti-cheat sistemleri açısından **sıfı
 
 **İZİNLİ (ve kullanılacak) yöntemler:**
 - **Ses:** Windows WASAPI loopback capture (sistem geneli) ve **Application/Process Loopback** (`ActivateAudioInterfaceAsync` + `AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK`). Bu, OBS ve Discord'un kullandığı işletim sistemi seviyesindeki API'dir; oyun sürecine dokunmaz. Oyunun PID'sini bulmak için sadece süreç listesi (`psutil.process_iter`) okunabilir. Bu bir **liste okuma** işlemidir, süreç açılmaz.
-- **Görüntü:** Ayrı, kendi sürecimizde çalışan, `WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW` stilli şeffaf pencere (DWM üzerinden çizilir).
-- **(İleride, opsiyonel)** Valve'ın resmi **Game State Integration (GSI)** özelliği, örneğin raund durumuna göre overlay'i gizlemek için.
+- **Görüntü:** Çeviriler yalnızca Telsiz'in kendi web sayfasında (tarayıcı veya telefon) gösterilir. Oyunun ekranına ve penceresine dokunulmaz.
+- **(İleride, opsiyonel)** Valve'ın resmi **Game State Integration (GSI)** özelliği (oyunun kendi paylaştığı raund bilgisi).
 
 README'de Türkçe bölümde "Neden güvenli?", İngilizce bölümde "Why is this safe?" başlıklı bir bölüm olacak ve yukarıdaki listeyi açıkça anlatacak.
 
@@ -61,7 +62,6 @@ README'de Türkçe bölümde "Neden güvenli?", İngilizce bölümde "Why is thi
 | Çeviri | Takılıp çıkarılabilir `Translator` arayüzü | Varsayılan: **`auto`**, kurulu RAM'e göre seçilir: 22 GB ve üstü **NLLB-200 distilled 1.3B**, 11 GB ve üstü **NLLB-200 distilled 600M**, altı **Argos Translate**. Hepsi yerel ve CPU'da çalışır. NLLB yüklenemezse otomatik olarak Argos'a düşülür. NLLB model ağırlıkları **CC-BY-NC-4.0** (ticari olmayan kullanım); ağırlıklar uygulamayla dağıtılmaz, ilk kullanımda indirilir; bu README'de belirtilir. Opsiyonel: **DeepL API** (kullanıcının kendi anahtarıyla) |
 | Sunucu | `FastAPI` + `uvicorn` + WebSocket | Yalnızca yerel ağda çalışır, varsayılan `127.0.0.1`; telefon modu açıkça açıldığında LAN'a bağlanır |
 | Web arayüzü | Düz HTML/CSS/JS, build adımı yok | İkinci ekran ve telefon bunu kullanır |
-| Overlay | `PySide6` çerçevesiz, şeffaf pencere + ctypes ile extended style | Web arayüzüne değil, doğrudan iç event bus'a abone olur |
 | QR kod | `qrcode` | Telefon bağlantısı için |
 | Ayarlar | `config.toml` (`tomllib` + `tomli-w`) | |
 | Test | `pytest` | |
@@ -87,8 +87,7 @@ GlossaryFilter (oyun terimleri: "eco", "flash", "A long"… çevrilmez)
       ▼
 Translator (argos | nllb | deepl)
       ▼
-EventBus (asyncio) ──┬──► Overlay (PySide6)
-                     ├──► WebSocket ──► 2. ekran (tarayıcı/pencere)
+EventBus (asyncio) ──┬──► WebSocket ──► 2. ekran (tarayıcı)
                      └──► WebSocket ──► Telefon (LAN, QR)
 ```
 
@@ -141,10 +140,7 @@ telsiz/
 │   │   └── deepl.py
 │   ├── server/
 │   │   ├── app.py            # FastAPI + WS
-│   │   └── static/           # index.html, overlay-style.css, app.js
-│   ├── overlay/
-│   │   ├── window.py         # PySide6 şeffaf pencere
-│   │   └── win32.py          # ctypes: extended styles, DPI awareness
+│   │   └── static/           # index.html, style.css, app.js
 │   └── util/
 │       └── qr.py
 ├── native/process_loopback/  # M3: C++ yardımcı (CMake), CI'da derlenir
@@ -157,15 +153,12 @@ telsiz/
 
 ---
 
-## 6. Ekran, tam ekran modu ve çözünürlük kuralları
+## 6. Görüntüleme ve ekran modu
 
-- Overlay konumu ve boyutu **yüzde** olarak saklanır (`x_pct`, `y_pct`, `width_pct`, `font_scale`). Piksel değeri saklanmaz.
-- Uygulama başlarken `SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)` çağrılır.
-- Overlay hangi monitörde olacağını config'den alır (varsayılan: birincil monitör). Monitör geometrisi değişirse (`QScreen.geometryChanged`) yeniden konumlanır.
-- Overlay **tıklamaları geçirir** ve **odak çalmaz** (`WS_EX_NOACTIVATE`). Oyun asla alta inmemeli.
-- Overlay yalnızca **Tam Ekran Pencereli (borderless)** modda garanti edilir. Uygulama ilk açılışta ve README'de bunu söyler. Exclusive fullscreen ve 4:3 stretched kullananlara **ikinci ekran veya telefon modu** önerilir.
-- Overlay görünümü: yarı saydam koyu arka plan, beyaz yazı, son N mesaj (varsayılan 3), her mesaj X saniye sonra kaybolur (varsayılan 6). Dil kodu küçük bir etiket olarak gösterilir: `[RU]`.
-- Ayarlar ve overlay konumu için **ayrı bir ayar penceresi** olur; overlay'in kendisi asla etkileşimli değildir. Konumlandırma için "düzenleme modu" sadece ayar penceresinden açılır.
+- Çeviriler yalnızca web sayfasında gösterilir: ikinci ekran (bu bilgisayardaki tarayıcı) ve telefon (LAN, QR). Tek monitörle oynayana telefon önerilir; oyun öndeyken bilgisayardaki sayfa oyunun arkasında kalır.
+- Oyunun üstüne pencere çizilmez (overlay yok, bkz. bölüm 1).
+- CS2 arka plana alınınca (alt-tab) kendi sesini kapatır (ölçüm: −100 dBFS). Bu sırada çevrilecek ses yoktur; alt-tab sırasında çeviri gelmemesi normaldir.
+- **Tam Ekran (exclusive)** modunda testlerde çeviriler tutarsız geldi (bazı oturumlarda çok seyrek). README bunu söyler ve **Tam Ekran Pencereli**'yi önerir.
 
 ---
 
@@ -182,7 +175,7 @@ telsiz/
 ## 8. Gizlilik
 
 - Ses **asla diske yazılmaz** (debug modu dahil; debug için kullanıcı açıkça `--record-debug` vermeli ve bu README'de uyarıyla açıklanmalı).
-- Varsayılan çeviri motoru yereldir. Bulut motoru (DeepL) seçilirse ayarlar ekranında "metin üçüncü tarafa gönderilecek" uyarısı gösterilir.
+- Varsayılan çeviri motoru yereldir. Bulut motoru (DeepL) seçilirse konsolda ve web sayfasında "metin üçüncü tarafa gönderilecek" uyarısı gösterilir.
 - Telemetri yok.
 - Sunucu varsayılan olarak yalnızca `127.0.0.1`'de dinler. Telefon modu açılınca LAN'a açılır ve rastgele bir **erişim token'ı** üretilir; bu token QR koddaki URL'ye eklenir, token'ı olmayan bağlantılar reddedilir.
 
@@ -214,15 +207,13 @@ Her kilometre taşı ayrı bir branch/PR olarak ilerlesin. Bir kilometre taşın
 - Windows sürümü desteklemiyorsa sistem loopback'e otomatik düşer ve kullanıcıyı uyarır
 - **Kabul kriteri:** Arka planda müzik çalarken yalnızca hedef uygulamanın sesi işlenir.
 
-### M4: Overlay
-- PySide6 şeffaf, tıklama geçiren, odak çalmayan pencere; yüzde tabanlı konumlandırma; DPI farkındalığı; çoklu monitör
-- Ayarlar penceresi (dil seçimi, motor seçimi, overlay konumu/boyutu, gösterim modları)
-- **Kabul kriteri:** CS2 Tam Ekran Pencereli modda 1080p, 1440p ve %150 ölçekte overlay doğru yerde görünür, oyun odağı kaybolmaz.
+### M4: Overlay (iptal edildi)
+- Oyunun üstünde gösterim projeden çıkarıldı (2026-11-21, proje sahibinin kararı). Çeviriler telefondan ve ikinci ekrandan (web sayfası) izlenir. Bu kilometre taşı yapılmayacak.
 
 ### M5: Cilalama ve dağıtım
 - Oyun terimleri sözlüğü (`data/glossary.toml`)
 - PyInstaller ile tek klasörlük dağıtım; GitHub Releases iş akışı
-- README (TR + EN, aynı içerik): kurulum, ekran görüntüleri, SSS (exclusive fullscreen, stretched, FACEIT, gizlilik)
+- README (TR + EN, aynı içerik): kurulum, ekran görüntüleri, SSS (tek monitör ve telefon, Tam Ekran modu, FACEIT, gizlilik)
 - **Kabul kriteri (README):** Türkçe ve İngilizce bölümler aynı başlıklara, aynı sıraya ve aynı içeriğe sahip
 
 ---

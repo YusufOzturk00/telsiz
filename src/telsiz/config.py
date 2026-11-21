@@ -25,6 +25,7 @@ class AsrConfig:
     device: str = "auto"
     compute_type: str = "auto"
     beam_size: int = 5
+    temperature_fallback: bool = False  # decode unsure clips again (slower; see asr.py)
     prompts: dict[str, str] = field(default_factory=lambda: dict(DEFAULT_PROMPTS))
 
 
