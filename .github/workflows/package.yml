@@ -1,0 +1,54 @@
+name: Package
+
+# Builds the Windows package (Telsiz.exe in one folder, zipped). Used by CI on every
+# change and by the release workflow. telsiz-loopback.exe is built here from source;
+# no prebuilt binaries come from the repository.
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Windows package
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Build telsiz-loopback.exe
+        run: |
+          cmake -S native/process_loopback -B native/process_loopback/build -A x64
+          cmake --build native/process_loopback/build --config Release
+      - name: Install
+        run: python -m pip install -e ".[all,package]"
+      - name: Build package
+        run: python scripts/build_package.py
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          $app = "dist/Telsiz"
+          $expected = python -c "import telsiz; print('telsiz ' + telsiz.__version__)"
+          $version = & "$app/Telsiz.exe" --version
+          if ($LASTEXITCODE -ne 0 -or $version -ne $expected) {
+            throw "Telsiz.exe --version printed '$version', expected '$expected'"
+          }
+          & "$app/Telsiz.exe" --help | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw "Telsiz.exe --help failed" }
+          $helper = & "$app/telsiz-loopback.exe" --version
+          if ($helper -notlike "telsiz-loopback *") { throw "helper missing: $helper" }
+          foreach ($file in "Telsiz - Telefon.cmd", "config.example.toml", "LICENSE", "THIRD_PARTY_NOTICES.txt") {
+            if (-not (Test-Path "$app/$file")) { throw "$file is missing from the package" }
+          }
+          $global:LASTEXITCODE = 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: telsiz-windows-x64
+          path: dist/Telsiz-*-windows-x64.zip
+          if-no-files-found: error
+          retention-days: 14

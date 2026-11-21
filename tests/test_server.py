@@ -50,6 +50,10 @@ def test_static_assets_are_served():
     with client(EventBus()) as c:
         assert c.get("/static/app.js").status_code == 200
         assert c.get("/static/style.css").status_code == 200
+        icon = c.get("/static/icon.svg")
+        assert icon.status_code == 200
+        assert icon.headers["content-type"].startswith("image/svg+xml")
+        assert 'rel="icon" href="/static/icon.svg"' in c.get("/").text
 
 
 def test_websocket_streams_history_then_live_events():

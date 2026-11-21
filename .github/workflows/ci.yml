@@ -75,3 +75,6 @@ jobs:
           name: telsiz-loopback
           path: native/process_loopback/build/Release/telsiz-loopback.exe
           if-no-files-found: error
+
+  package:
+    uses: ./.github/workflows/package.yml

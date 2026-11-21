@@ -62,3 +62,10 @@ Transcription only, the four test clips clean and with two simulated voice-chat 
 | **large-v3-turbo** | **cuda** | **int8_float16** | **11 %** | **621 ms** |
 | small | cuda | float16 | 26 % | 717 ms |
 | small | cpu | int8 | 27 % | 1899 ms |
+
+## Speed and speech detection in game (M5)
+
+[m5-speed-and-detection.md](m5-speed-and-detection.md): in-game measurements (GPU vs CPU
+during a match, speech-detector peaks in a bot match vs real matches) and the test-clip
+measurements behind the 10 s / 15 s Whisper windows, the single-pass decoding, the new
+speech-detector rule and the translation beam size.

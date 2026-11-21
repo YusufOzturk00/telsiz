@@ -125,6 +125,54 @@ def test_feeding_in_pieces_matches_one_call():
         np.testing.assert_array_equal(a.audio, b.audio)
 
 
+class Scripted:
+    """Fake detector that returns a fixed probability per frame, in order."""
+
+    frame_samples = 512
+
+    def __init__(self, *runs: tuple[float, int]) -> None:
+        self.probs = np.concatenate([np.full(n, p, np.float32) for p, n in runs])
+        self.pos = 0
+
+    def signal(self) -> np.ndarray:
+        return np.full(len(self.probs) * self.frame_samples, 0.1, np.float32)
+
+    def __call__(self, frames: np.ndarray) -> np.ndarray:
+        n = len(frames) // self.frame_samples
+        out = self.probs[self.pos : self.pos + n]
+        self.pos += n
+        return out
+
+
+def scripted(*runs: tuple[float, int], **options) -> list[Utterance]:
+    detector = Scripted(*runs)
+    seg = UtteranceSegmenter(detector, SegmenterOptions(**options))
+    return seg.feed(detector.signal()) + seg.flush()
+
+
+def test_speech_that_dips_under_game_noise_is_kept_whole():
+    # In CS2 a teammate's voice starts clearly, then scores ~0.4 under game sound.
+    utts = scripted((0.0, 20), (0.7, 1), (0.4, 30), (0.2, 3), (0.45, 20), (0.0, 30))
+
+    assert len(utts) == 1
+    assert utts[0].duration == pytest.approx((1 + 30 + 3 + 20) * 0.032 + 0.4, abs=0.07)
+
+
+def test_sound_that_never_reaches_the_start_threshold_is_ignored():
+    # Game sound alone stayed under 0.5 in 99 % of seconds of a bot match.
+    assert scripted((0.0, 10), (0.45, 60), (0.0, 30)) == []
+
+
+def test_a_lone_spike_is_still_too_short():
+    assert scripted((0.0, 20), (0.9, 3), (0.1, 40)) == []
+
+
+def test_silence_ends_the_utterance_without_waiting_for_the_maximum():
+    utts = scripted((0.0, 10), (0.8, 40), (0.1, 20), (0.8, 40), (0.1, 40))
+
+    assert len(utts) == 2
+
+
 def test_silero_detector_scores_frames():
     pytest.importorskip("faster_whisper")
     from telsiz.vad import SileroDetector

@@ -6,6 +6,7 @@ import ctypes
 import hashlib
 import importlib.util
 import logging
+import math
 import os
 import sys
 from collections.abc import Callable, Iterable, Mapping
@@ -37,6 +38,25 @@ DEFAULT_PROMPTS: dict[str, str] = {
 # temperature, five candidates each time.
 FALLBACK_TEMPERATURES: tuple[float, ...] = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
 
+# Whisper pads every clip to a 30 s window, but live clips are at most ~6 s long. On
+# the CPU the encoder spent most of its time on that padding. Shorter windows, measured
+# on the test clips (cut by the live VAD, clean and with voice-chat noise, int8, 4 threads):
+#   small           30 s: WER 39 %, 1.57 s per clip   10 s: WER 38 %, 0.39 s
+#   large-v3-turbo  30 s: WER 26 %, 6.44 s per clip   15 s: WER 26 %, 2.18 s
+# Shorter still costs accuracy (small 10 s -> clip + 1 s: 44 %; turbo 15 s -> 10 s: 39 %).
+FULL_WINDOW_S = 30.0
+CPU_WINDOWS_S: dict[str, float] = {"small": 10.0, "large-v3-turbo": 15.0, "turbo": 15.0}
+FRAMES_PER_SECOND = 100  # Whisper's log-mel frames (10 ms hop)
+
+
+def resolve_window(window_s: float, model: str, device: str) -> float:
+    """Seconds of audio the encoder sees per clip; ``window_s`` > 0 is the user's choice."""
+    if window_s > 0:
+        return window_s
+    if device == "cpu":
+        return CPU_WINDOWS_S.get(model, FULL_WINDOW_S)
+    return FULL_WINDOW_S  # unmeasured model, or a GPU (fast enough for the full window)
+
 
 @dataclass(frozen=True)
 class Transcription:
@@ -64,6 +84,7 @@ class WhisperOptions:
     # clips (game noise makes Whisper unsure) and took ~4.7 s instead of ~2.2 s per
     # line, without better text.
     temperature_fallback: bool = False
+    window_s: float = 0.0  # encoder window; 0 = by model and device (resolve_window)
     cpu_threads: int = 4  # cap CPU use so the game keeps its cores; 0 = library default
     prompts: Mapping[str, str] = field(default_factory=lambda: dict(DEFAULT_PROMPTS))
     download_root: Path | None = None
@@ -155,15 +176,19 @@ ModelFactory = Callable[[str, str, str, "str | None", int], Any]
 
 
 class EncoderCache:
-    """Remembers the last encoder output so one clip is encoded only once.
+    """Runs Whisper's encoder once per clip, on a window shorter than 30 s if asked.
 
-    Language detection and transcription each run Whisper's encoder, the most
-    expensive step, on the same 30 s window. Caching the last result by content
-    halves the work per utterance (and the CPU or GPU time taken from the game).
+    Language detection and transcription each run the encoder, the most expensive
+    step, on the same window. Caching the last result by content halves the work per
+    utterance (and the CPU or GPU time taken from the game). ``window_frames`` trims
+    the zero padding faster-whisper adds up to 30 s, but never the clip itself.
     """
 
-    def __init__(self, encode: Callable[[np.ndarray], Any]) -> None:
+    def __init__(
+        self, encode: Callable[[np.ndarray], Any], window_frames: int | None = None
+    ) -> None:
         self._encode = encode
+        self._window = window_frames
         self._key: tuple[tuple[int, ...], bytes] | None = None
         self._value: Any = None
         self.hits = 0
@@ -174,9 +199,20 @@ class EncoderCache:
         if key == self._key:
             self.hits += 1
             return self._value
-        self._value = self._encode(features)
+        self._value = self._encode(self._trim(data))
         self._key = key
         return self._value
+
+    def _trim(self, features: np.ndarray) -> np.ndarray:
+        total = features.shape[-1]
+        if self._window is None or self._window >= total:
+            return features
+        frame_has_sound = np.any(features != 0, axis=tuple(range(features.ndim - 1)))
+        sounding = np.flatnonzero(frame_has_sound)
+        content = int(sounding[-1]) + 1 if sounding.size else 0
+        whole_seconds = math.ceil(content / FRAMES_PER_SECOND) * FRAMES_PER_SECOND
+        frames = max(self._window, whole_seconds)
+        return features if frames >= total else np.ascontiguousarray(features[..., :frames])
 
 
 class WhisperRecognizer:
@@ -190,12 +226,14 @@ class WhisperRecognizer:
             self.options.device, self.options.compute_type, cuda_usable=usable
         )
         self.model_name = resolve_model(self.options.model, self.device)
+        self.window_s = resolve_window(self.options.window_s, self.model_name, self.device)
         root = self.options.download_root or models_dir() / "whisper"
         log.info(
-            "Loading Whisper %r on %s (%s); first run downloads the model",
+            "Loading Whisper %r on %s (%s, %g s window); first run downloads the model",
             self.model_name,
             self.device,
             self.compute_type,
+            self.window_s,
         )
         self._model = factory(
             self.model_name, self.device, self.compute_type, str(root), self.options.cpu_threads
@@ -203,7 +241,10 @@ class WhisperRecognizer:
         if callable(getattr(self._model, "encode", None)) and hasattr(
             self._model, "feature_extractor"
         ):
-            self._model.encode = EncoderCache(self._model.encode)
+            window = None
+            if self.window_s < FULL_WINDOW_S:
+                window = round(self.window_s * FRAMES_PER_SECOND)
+            self._model.encode = EncoderCache(self._model.encode, window)
 
     def detect_language(self, audio: np.ndarray) -> dict[str, float]:
         model = self._model
