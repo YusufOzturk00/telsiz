@@ -15,6 +15,9 @@ same_language = "show"
 # Or set "small", "medium" or "large-v3-turbo".
 model = "auto"
 # "auto" uses an NVIDIA GPU when the CUDA libraries are installed, otherwise the CPU.
+# Exception: while listening to the game (--live), "auto" means the CPU. During a match
+# the game keeps the graphics card so busy that recognition there took ~26 s per
+# sentence versus ~3 s on the CPU. Set "cuda" to use the graphics card anyway.
 device = "auto"
 compute_type = "auto"
 beam_size = 5

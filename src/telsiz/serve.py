@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 import socket
 import sys
@@ -25,6 +26,23 @@ def port_available(host: str, port: int) -> bool:
         except OSError:
             return False
     return True
+
+
+def live_recognition_config(config: Config) -> Config:
+    """Listening to a game: recognize speech on the CPU unless a device was chosen.
+
+    Measured in CS2 (RTX 4060, Ryzen 5 7500F): while the game is in front during a
+    match it keeps the graphics card so busy that recognizing one 4 s sentence took
+    ~26 s on the GPU (with any priority) but ~3 s on the CPU, and the GPU only caught
+    up after alt-tab. Recognition on the CPU also leaves the game its graphics memory.
+    """
+    if config.capture.mode != "auto" or config.asr.device != "auto":
+        return config
+    log.info(
+        "Listening to the game: speech recognition runs on the CPU, because during a "
+        "match the game keeps the graphics card busy (use --device cuda to override)"
+    )
+    return dataclasses.replace(config, asr=dataclasses.replace(config.asr, device="cpu"))
 
 
 def run_live(
@@ -56,6 +74,7 @@ def run_live(
         return 2
 
     set_process_priority(config.performance.priority)
+    config = live_recognition_config(config)
     log.info("Loading models (the first run downloads them)...")
     pipeline, segmenter = build_pipeline(config)
 
