@@ -58,6 +58,17 @@ path = ""
 priority = "below_normal"
 cpu_threads = 4
 
+[capture]
+# "auto" (default): listen to the game only, so music, videos and Discord on this PC are
+# not translated. This uses Windows process loopback (Windows 10 2004 or newer) through
+# telsiz-loopback.exe; if that is not possible, Telsiz falls back to all PC audio and says
+# so. "system": always listen to all audio this PC plays.
+mode = "auto"
+# The program to listen to. Its child processes are included.
+process_name = "cs2.exe"
+# Leave empty to find telsiz-loopback.exe automatically.
+helper_path = ""
+
 [server]
 # Local web page for a second screen or phone: http://127.0.0.1:<port>/
 port = 8765

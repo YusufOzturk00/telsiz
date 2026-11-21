@@ -1,4 +1,4 @@
-"""``python -m telsiz --live``: system audio -> pipeline -> web page (and phone)."""
+"""``python -m telsiz --live``: game (or PC) audio -> pipeline -> web page (and phone)."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def run_live(
     """Run until Ctrl+C. Returns a process exit code."""
     import uvicorn
 
-    from telsiz.audio.system_loopback import SystemLoopbackSource
+    from telsiz.audio.capture import CaptureFactory
     from telsiz.bus import EventBus
     from telsiz.live import LiveRunner, latency_summary
     from telsiz.perf import set_process_priority
@@ -57,7 +57,10 @@ def run_live(
 
     bus = EventBus()
     bus.add_listener(show)
-    runner = LiveRunner(SystemLoopbackSource, pipeline, segmenter, bus.publish)
+    capture = CaptureFactory(
+        config.capture.mode, config.capture.process_name, config.capture.helper_path
+    )
+    runner = LiveRunner(capture, pipeline, segmenter, bus.publish)
     server = uvicorn.Server(
         uvicorn.Config(
             create_app(bus, settings),
@@ -78,7 +81,7 @@ def run_live(
             "networks only.",
             flush=True,
         )
-    print("Listening to this PC's audio. Press Ctrl+C to stop.", flush=True)
+    print(f"{capture.describe()} Press Ctrl+C to stop.", flush=True)
 
     runner.start()
     if open_browser:

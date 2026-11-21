@@ -152,3 +152,23 @@ def test_nllb_engine_settings(tmp_path):
 
     with pytest.raises(ValueError):
         load_config(write(tmp_path, '[translate]\nnllb_model = "nllb-54b"\n'))
+
+
+def test_capture_settings(tmp_path):
+    config = load_config(
+        write(
+            tmp_path,
+            '[capture]\nmode = "system"\nprocess_name = "vlc.exe"\nhelper_path = "C:/x.exe"\n',
+        )
+    )
+
+    assert config.capture.mode == "system"
+    assert config.capture.process_name == "vlc.exe"
+    assert config.capture.helper_path == "C:/x.exe"
+    assert load_config(None).capture.mode == "auto"
+
+
+@pytest.mark.parametrize("text", ['[capture]\nmode = "game"\n', '[capture]\nprocess_name = " "\n'])
+def test_invalid_capture_settings_are_rejected(tmp_path, text):
+    with pytest.raises(ValueError, match="capture"):
+        load_config(write(tmp_path, text))

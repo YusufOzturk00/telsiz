@@ -30,6 +30,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--phone", action="store_true", help="with --live: also open the page on your phone (LAN)"
     )
+    parser.add_argument(
+        "--capture",
+        choices=["auto", "system"],
+        help="with --live: auto = only the game if possible (default), system = all PC audio",
+    )
+    parser.add_argument(
+        "--app", metavar="EXE", help="with --live: program to listen to (default: cs2.exe)"
+    )
     parser.add_argument("--port", type=int, help="with --live: web page port (default: 8765)")
     parser.add_argument(
         "--no-browser", action="store_true", help="with --live: do not open the browser"
@@ -56,6 +64,12 @@ def apply_overrides(config: Config, args: argparse.Namespace) -> Config:
         config = dataclasses.replace(
             config, server=dataclasses.replace(config.server, port=args.port)
         )
+    capture = config.capture
+    if getattr(args, "capture", None):
+        capture = dataclasses.replace(capture, mode=args.capture)
+    if getattr(args, "app", None):
+        capture = dataclasses.replace(capture, process_name=args.app)
+    config = dataclasses.replace(config, capture=capture)
     if args.target:
         config = dataclasses.replace(config, target_lang=args.target)
     return validate(config)
@@ -98,8 +112,8 @@ def main(
 ) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    if not args.live and (args.phone or args.port or args.no_browser):
-        parser.error("--phone, --port and --no-browser only work with --live")
+    if not args.live and (args.phone or args.port or args.no_browser or args.capture or args.app):
+        parser.error("--phone, --port, --no-browser, --capture and --app only work with --live")
     if args.input is None and not args.live:
         parser.print_help()
         return 0
